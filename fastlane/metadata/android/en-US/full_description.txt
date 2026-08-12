@@ -1,0 +1,25 @@
+MinkLauncher Open is a focused, one-page Android home-screen launcher designed around fast keyboard input and low visual noise.
+
+The home screen provides a two-item to-do preview, eight configurable shortcuts, a five-app drawer, and the Magic Box command field.
+
+Magic Box commands:
+
+• @ — choose a contact and compose a message
+• # — choose a contact, confirm, and place a call
+• - — add an internal to-do
+• $ — create a multiline note through an installed notes app
+• + — create a calendar event
+• ? — find and launch an installed app
+• Plain text — search local filenames or delegate a web query to Android’s selected search handler
+
+To-dos can be added, checked, edited, deleted, and reordered. Local file results are grouped into photos, videos, documents, and audio, with thumbnails where Android provides them.
+
+Privacy is a core feature:
+
+• No accounts, ads, analytics, trackers, or application server
+• Queries, to-dos, settings, and filename indexing stay on the device
+• Android cloud backup is disabled
+• Document search is limited to folders explicitly selected by the user
+• Permissions are requested only for features that need them
+
+MinkLauncher Open is released under the Apache License 2.0.
