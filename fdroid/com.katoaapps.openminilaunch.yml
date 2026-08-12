@@ -1,0 +1,25 @@
+Categories:
+  - System
+License: Apache-2.0
+AuthorName: Katoa Apps
+AuthorEmail: contact@katoaapps.com
+SourceCode: https://github.com/katoaapps/openminilaunch
+IssueTracker: https://github.com/katoaapps/openminilaunch/issues
+
+AutoName: MinkLauncher Open
+
+RepoType: git
+Repo: https://github.com/katoaapps/openminilaunch.git
+
+Builds:
+  - versionName: 0.5.0
+    versionCode: 5
+    commit: v0.5.0
+    subdir: app
+    gradle:
+      - yes
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+CurrentVersion: 0.5.0
+CurrentVersionCode: 5
