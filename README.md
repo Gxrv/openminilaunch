@@ -34,6 +34,7 @@ Current version: **0.5.0**. Feature releases show existing users a one-time in-a
 - Animated Magic Box to-do delivery into the newest widget page
 - System, light, and dark appearance modes
 - Swipe down anywhere on the home screen to expand notifications
+- Optional double-tap on empty Home space locks through Android's accessibility `GLOBAL_ACTION_LOCK_SCREEN`, preserving normal fingerprint and face unlock eligibility
 - Local persistence via SharedPreferences; no account or network is required
 - Privacy-first file search through Android's MediaStore and user-selected document folders; filenames never leave the device
 - Document search uses only folders selected through Android's Storage Access Framework, with an in-search reminder until one is selected
@@ -57,7 +58,7 @@ For an unsigned release APK:
 
 The release artifact is generated at `app/build/outputs/apk/release/app-release-unsigned.apk`. The build requires JDK 17 or newer and Android SDK 35; Android Studio is not required.
 
-After installing, press the device Home button and select **MinkLauncher Open** as the home app. Contact permission is requested only when `@` or `#` search is used. Advanced permission controls are also linked from Settings.
+After installing, press the device Home button and select **MinkLauncher Open** as the home app. Contact permission is requested only when `@` or `#` search is used. Optional controls, including **MinkLauncher Open - Double Tap to Lock Screen** in Android Accessibility settings, are linked from Settings.
 
 On first launch, MinkLauncher Open explicitly opens Android's default Home-app prompt. If it is dismissed, it can be reopened from **Settings → Default home app**.
 

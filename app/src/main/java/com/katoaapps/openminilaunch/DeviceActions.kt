@@ -1,21 +1,43 @@
 package com.katoaapps.openminilaunch
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.app.SearchManager
 import android.graphics.drawable.Drawable
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.provider.Settings
 import android.provider.CalendarContract
 import android.provider.ContactsContract
 import android.provider.Telephony
 import android.telephony.PhoneNumberUtils
+import android.view.accessibility.AccessibilityManager
 import android.widget.Toast
 
 class DeviceActions(private val context: Context) {
     @Volatile private var appsCache: List<LaunchableApp>? = null
     private val labelCache = mutableMapOf<String, String>()
+
+    fun isLockServiceEnabled(): Boolean {
+        val component = ComponentName(context, LockScreenAccessibilityService::class.java)
+        return context.getSystemService(AccessibilityManager::class.java)
+            ?.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+            ?.any { service ->
+                val info = service.resolveInfo.serviceInfo
+                ComponentName(info.packageName, info.name) == component
+            } == true
+    }
+
+    fun supportsLockScreenAction(): Boolean = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+
+    fun lockDevice(): Boolean = isLockServiceEnabled() && LockScreenAccessibilityService.lockScreen()
+
+    fun lockAccessibilitySettingsIntent(): Intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+
+    fun openLockAccessibilitySettings() = start(lockAccessibilitySettingsIntent())
 
     fun installedApps(): List<LaunchableApp> {
         appsCache?.let { return it }

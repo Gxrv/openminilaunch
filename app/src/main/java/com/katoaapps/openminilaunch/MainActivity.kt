@@ -20,6 +20,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -307,6 +308,7 @@ private fun HomeScreen(
     openTodos: () -> Unit,
     keyboardInputEnabled: Boolean,
 ) {
+    val context = LocalContext.current
     var drawerOpen by remember { mutableStateOf(false) }
     var todoJumpToken by remember { mutableIntStateOf(0) }
     var flyingTodo by remember { mutableStateOf<String?>(null) }
@@ -314,7 +316,19 @@ private fun HomeScreen(
     var widgetCenter by remember { mutableStateOf(Offset.Zero) }
     var magicCenter by remember { mutableStateOf(Offset.Zero) }
     var magicExpanded by remember { mutableStateOf(false) }
+    var showLockDisclosure by remember { mutableStateOf(false) }
     val flightPosition = remember { Animatable(Offset.Zero, Offset.VectorConverter) }
+    val lockServiceLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        if (actions.isLockServiceEnabled()) actions.lockDevice()
+    }
+
+    fun lockFromHome() {
+        if (!actions.supportsLockScreenAction()) {
+            Toast.makeText(context, "Double-tap lock requires Android 9 or newer", Toast.LENGTH_SHORT).show()
+        } else if (!actions.lockDevice()) {
+            showLockDisclosure = true
+        }
+    }
 
     LaunchedEffect(flyingTodo) {
         if (flyingTodo != null && widgetCenter != Offset.Zero && magicCenter != Offset.Zero) {
@@ -334,6 +348,8 @@ private fun HomeScreen(
                 onVerticalDrag = { _, amount -> if (amount > 0) distance += amount },
                 onDragEnd = { if (distance > 140f) actions.expandNotificationShade() },
             )
+        }.pointerInput(magicExpanded) {
+            if (!magicExpanded) detectTapGestures(onDoubleTap = { lockFromHome() })
         },
     ) {
         Column(
@@ -396,6 +412,16 @@ private fun HomeScreen(
                 todoJumpToken++
             },
             onExpandedChange = { magicExpanded = it },
+        )
+    }
+
+    if (showLockDisclosure) {
+        LockAccessibilityDisclosureDialog(
+            onContinue = {
+                showLockDisclosure = false
+                lockServiceLauncher.launch(actions.lockAccessibilitySettingsIntent())
+            },
+            onDismiss = { showLockDisclosure = false },
         )
     }
 
@@ -1250,8 +1276,9 @@ private fun OnboardingDialog(store: LauncherStore, onFinish: () -> Unit) {
                             }
                             OnboardingPoint(Icons.Default.Phone, "Direct calls", "Call access is used only after you choose a contact and approve the confirmation dialog.")
                             OnboardingPoint(Icons.Default.PhotoLibrary, "Media", "Optional access searches photo, video, and audio filenames locally.")
+                            OnboardingPoint(Icons.Default.Lock, "Double Tap to Lock Screen", "Optional accessibility access performs only Android's Lock screen action after you double-tap empty Home space. It does not inspect screen content.")
                             Text("For documents, Android lets you choose specific folders. MinkLauncher Open does not request All files access.", color = Muted, fontSize = 13.sp)
-                            Text("Android will show Contacts and Call prompts next. Optional media access appears only when you enable file search.", color = Muted)
+                            Text("Android will show Contacts and Call prompts next. Optional media and Double Tap to Lock Screen access are enabled later from Settings.", color = Muted)
                         }
                     }
                 }
@@ -1320,6 +1347,8 @@ private fun SettingsScreen(
     var callsGranted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
     }
+    var lockServiceEnabled by remember { mutableStateOf(actions.isLockServiceEnabled()) }
+    var showLockDisclosure by remember { mutableStateOf(false) }
     val directCallsSupported = remember(context) { supportsDirectCalls(context) }
     var showFileScopeChoice by remember { mutableStateOf(false) }
     DisposableEffect(context) {
@@ -1329,6 +1358,7 @@ private fun SettingsScreen(
                 contactsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
                 mediaGranted = hasMediaReadAccess(context)
                 callsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
+                lockServiceEnabled = actions.isLockServiceEnabled()
             }
         }
         lifecycle?.addObserver(observer)
@@ -1346,6 +1376,9 @@ private fun SettingsScreen(
         mediaGranted = hasMediaReadAccess(context)
         if (!mediaGranted && mediaPermissionPermanentlyDenied(context)) actions.openAppSettings()
         showFileScopeChoice = true
+    }
+    val lockServiceSettings = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+        lockServiceEnabled = actions.isLockServiceEnabled()
     }
     val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         uri?.let {
@@ -1431,6 +1464,18 @@ private fun SettingsScreen(
                 onGrant = { mediaPermission.launch(mediaReadPermissions()) },
                 onManage = { actions.openAppSettings() },
             )
+            if (actions.supportsLockScreenAction()) {
+                PermissionCard(
+                    title = "Double Tap to Lock Screen",
+                    description = "Uses Android's Lock screen accessibility action only after you double-tap empty Home space.",
+                    granted = lockServiceEnabled,
+                    icon = Icons.Default.Lock,
+                    onGrant = { showLockDisclosure = true },
+                    onManage = { actions.openLockAccessibilitySettings() },
+                )
+            } else {
+                SettingsRow("Double Tap to Lock Screen", "Requires Android 9 or newer", Icons.Default.Lock, enabled = false) { }
+            }
             HorizontalDivider(color = Sage)
             SectionLabel("FILE SEARCH")
             Text(
@@ -1476,6 +1521,16 @@ private fun SettingsScreen(
             }
             Spacer(Modifier.height(24.dp))
         }
+    }
+
+    if (showLockDisclosure) {
+        LockAccessibilityDisclosureDialog(
+            onContinue = {
+                showLockDisclosure = false
+                lockServiceSettings.launch(actions.lockAccessibilitySettingsIntent())
+            },
+            onDismiss = { showLockDisclosure = false },
+        )
     }
 
     pickingShortcut?.let { shortcut ->
@@ -1759,6 +1814,24 @@ private fun PermissionCard(
             if (!granted) FilledTonalButton(onClick = onGrant) { Text("Allow") }
         }
     }
+}
+
+@Composable
+private fun LockAccessibilityDisclosureDialog(onContinue: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Default.Lock, null, tint = Rust) },
+        title = { Text("Enable Double Tap to Lock Screen?") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("To behave like the power button and retain normal fingerprint and face unlock eligibility, MinkLauncher Open uses Android's accessibility Lock screen action.")
+                Text("The service runs only when you double-tap empty Home space. It does not observe accessibility events, read screen content, perform gestures, or collect data.")
+                Text("In Accessibility settings, enable “MinkLauncher Open - Double Tap to Lock Screen.” You can disable it at any time.")
+            }
+        },
+        confirmButton = { Button(onClick = onContinue) { Text("Continue") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Not now") } },
+    )
 }
 
 @Composable

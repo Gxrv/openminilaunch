@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MinkLauncher Open</string>
+    <string name="lock_accessibility_label">MinkLauncher Open - Double Tap to Lock Screen</string>
+    <string name="lock_accessibility_description">Allows MinkLauncher Open to perform Android’s Lock screen action only after you double-tap empty Home space. It cannot read or interact with screen content.</string>
+</resources>

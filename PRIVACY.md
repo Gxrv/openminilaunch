@@ -10,6 +10,7 @@ Optional permissions are used as follows:
 - Phone: places a call only after the user selects a contact and confirms the call in MinkLauncher Open.
 - Photos, videos, audio, and older shared-storage access: searches media filenames locally and displays local thumbnails.
 - Notification shade: permits the launcher’s swipe-down gesture to expand Android’s notification panel.
+- Accessibility: the optional **MinkLauncher Open - Double Tap to Lock Screen** service performs only Android's Lock screen global action after the user double-taps empty Home space. It does not subscribe to accessibility events, retrieve window content, perform gestures, or collect data.
 
 Document access is limited to folders the user explicitly selects through Android’s Storage Access Framework. MinkLauncher Open does not request Android’s All files access permission.
 
