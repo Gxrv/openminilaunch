@@ -1,5 +1,5 @@
 Categories:
-  - System
+  - Launcher
 License: Apache-2.0
 AuthorName: Katoa Apps
 AuthorEmail: contact@katoaapps.com
@@ -14,7 +14,7 @@ Repo: https://github.com/katoaapps/openminilaunch.git
 Builds:
   - versionName: 0.5.0
     versionCode: 5
-    commit: v0.5.0
+    commit: fe2c79bae1ecadbab0115270bddf4a2761890b59
     subdir: app
     gradle:
       - yes
