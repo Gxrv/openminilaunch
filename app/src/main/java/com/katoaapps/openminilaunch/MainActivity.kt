@@ -240,7 +240,13 @@ private fun MiniLaunchApp(
         BackHandler(enabled = screen == Screen.HOME && !imeVisible) { }
         Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
             when (screen) {
-                Screen.HOME -> HomeScreen(store, actions, { screen = Screen.SETTINGS }, { screen = Screen.TODOS })
+                Screen.HOME -> HomeScreen(
+                    store = store,
+                    actions = actions,
+                    openSettings = { screen = Screen.SETTINGS },
+                    openTodos = { screen = Screen.TODOS },
+                    keyboardInputEnabled = !showTutorial && !showUpdateNotice,
+                )
                 Screen.SETTINGS -> SettingsScreen(
                     store,
                     actions,
@@ -299,6 +305,7 @@ private fun HomeScreen(
     actions: DeviceActions,
     openSettings: () -> Unit,
     openTodos: () -> Unit,
+    keyboardInputEnabled: Boolean,
 ) {
     var drawerOpen by remember { mutableStateOf(false) }
     var todoJumpToken by remember { mutableIntStateOf(0) }
@@ -331,7 +338,7 @@ private fun HomeScreen(
     ) {
         Column(
             Modifier.fillMaxSize().blur(if (magicExpanded) 10.dp else 0.dp)
-                .statusBarsPadding().navigationBarsPadding().imePadding()
+                .statusBarsPadding().navigationBarsPadding()
                 .padding(horizontal = 22.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
@@ -357,20 +364,7 @@ private fun HomeScreen(
             )
             ShortcutGrid(store, actions, openTodos) { drawerOpen = true }
             Spacer(Modifier.weight(1f))
-            MagicBox(
-                store,
-                actions,
-                Modifier.fillMaxWidth()
-                .onGloballyPositioned { coordinates ->
-                    val origin = coordinates.positionInRoot()
-                    magicCenter = origin + Offset(coordinates.size.width / 2f, coordinates.size.height / 2f)
-                },
-                onTodoAdded = { text ->
-                    flyingTodo = text
-                    todoJumpToken++
-                },
-                onExpandedChange = { magicExpanded = it },
-            )
+            Spacer(Modifier.height(52.dp))
         }
         flyingTodo?.takeIf { flightActive }?.let { text ->
             Surface(
@@ -386,6 +380,23 @@ private fun HomeScreen(
                 }
             }
         }
+        MagicBox(
+            store = store,
+            actions = actions,
+            modifier = Modifier.fillMaxSize().zIndex(if (magicExpanded) 20f else 0f),
+            collapsedModifier = Modifier.fillMaxWidth().navigationBarsPadding()
+                .padding(horizontal = 22.dp, vertical = 12.dp)
+                .onGloballyPositioned { coordinates ->
+                    val origin = coordinates.positionInRoot()
+                    magicCenter = origin + Offset(coordinates.size.width / 2f, coordinates.size.height / 2f)
+                },
+            keyboardInputEnabled = keyboardInputEnabled,
+            onTodoAdded = { text ->
+                flyingTodo = text
+                todoJumpToken++
+            },
+            onExpandedChange = { magicExpanded = it },
+        )
     }
 
     if (drawerOpen) {
@@ -486,6 +497,8 @@ private fun MagicBox(
     store: LauncherStore,
     actions: DeviceActions,
     modifier: Modifier = Modifier,
+    collapsedModifier: Modifier = Modifier,
+    keyboardInputEnabled: Boolean = true,
     onTodoAdded: (String) -> Unit = {},
     onExpandedChange: (Boolean) -> Unit = {},
 ) {
@@ -593,9 +606,9 @@ private fun MagicBox(
     }
     val inputLocked = selectedApp != null || (prefix == '#' && selectedContact != null)
 
-    fun refocus() {
+    fun refocus(showSoftwareKeyboard: Boolean = true) {
         focusRequester.requestFocus()
-        keyboard?.show()
+        if (showSoftwareKeyboard) keyboard?.show()
     }
 
     fun clearCommand() {
@@ -640,33 +653,56 @@ private fun MagicBox(
         }
     }
 
-    if (!expanded) {
-        Row(
-            modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
-                .clickable { clearCommand(); expanded = true; onExpandedChange(true) }.padding(start = 18.dp, end = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("Magic box  @  #  -  $  +  ?", Modifier.weight(1f), color = Muted, fontSize = 14.sp)
-            FilledIconButton(
-                onClick = { clearCommand(); expanded = true; onExpandedChange(true) },
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primary),
+    LaunchedEffect(keyboardInputEnabled) {
+        if (keyboardInputEnabled) {
+            focusRequester.requestFocus()
+            keyboard?.hide()
+        }
+    }
+
+    BackHandler(enabled = expanded) { dismiss() }
+
+    Box(modifier) {
+        if (expanded) {
+            Box(Modifier.matchParentSize().background(Color.Black.copy(alpha = .48f)).clickable(onClick = { dismiss() }))
+        } else {
+            Row(
+                collapsedModifier.align(Alignment.BottomCenter)
+                    .clip(RoundedCornerShape(22.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                    .clickable {
+                        clearCommand()
+                        expanded = true
+                        onExpandedChange(true)
+                        refocus(showSoftwareKeyboard = true)
+                    }
+                    .padding(start = 18.dp, end = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.Keyboard, "Open Magic Box")
+                Text("Magic box  @  #  -  $  +  ?", Modifier.weight(1f), color = Muted, fontSize = 14.sp)
+                FilledIconButton(
+                    onClick = {
+                        clearCommand()
+                        expanded = true
+                        onExpandedChange(true)
+                        refocus(showSoftwareKeyboard = true)
+                    },
+                    colors = IconButtonDefaults.filledIconButtonColors(containerColor = MaterialTheme.colorScheme.primary),
+                ) {
+                    Icon(Icons.Default.Keyboard, "Open Magic Box")
+                }
             }
         }
-    } else {
-        Dialog(
-            onDismissRequest = { dismiss() },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+
+        Column(
+            modifier = if (expanded) {
+                Modifier.fillMaxWidth().align(Alignment.TopCenter)
+                    .statusBarsPadding().imePadding().padding(horizontal = 18.dp, vertical = 18.dp)
+            } else {
+                Modifier.size(1.dp).align(Alignment.BottomCenter).graphicsLayer { alpha = 0f }
+            },
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            LaunchedEffect(Unit) { refocus() }
-            Box(
-                Modifier.fillMaxSize().background(Color.Black.copy(alpha = .48f))
-                    .statusBarsPadding().imePadding().padding(horizontal = 18.dp, vertical = 18.dp),
-                contentAlignment = Alignment.TopCenter,
-            ) {
-                Box(Modifier.matchParentSize().clickable(onClick = { dismiss() }))
-                Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Surface(shape = RoundedCornerShape(24.dp), color = MaterialTheme.colorScheme.surface, shadowElevation = 12.dp) {
                         Row(Modifier.fillMaxWidth().padding(start = 12.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                             selectedContact?.let { contact -> CommandChip(contact.name, actionColor, actionContentColor) { clearCommand(); refocus() } }
@@ -675,6 +711,10 @@ private fun MagicBox(
                                 value = text,
                                 onValueChange = { value ->
                                     text = value
+                                    if (!expanded && value.text.isNotEmpty()) {
+                                        expanded = true
+                                        onExpandedChange(true)
+                                    }
                                     if (lockedPrefix == null && value.text.firstOrNull() != prefix) {
                                         selectedContact = null
                                         selectedApp = null
@@ -690,6 +730,7 @@ private fun MagicBox(
                                 maxLines = 5,
                                 readOnly = inputLocked,
                                 keyboardOptions = KeyboardOptions(
+                                    showKeyboardOnFocus = false,
                                     imeAction = when {
                                         prefix == '$' -> ImeAction.Default
                                         prefix in listOf('@', '#', '-', '+', '?') -> ImeAction.Send
@@ -707,6 +748,7 @@ private fun MagicBox(
                             ) { Icon(actionIcon, "Run command") }
                         }
                     }
+            if (expanded) {
                     MagicBoxLegend(prefix, enabled = !inputLocked) { key ->
                         clearCommand()
                         text = TextFieldValue(key.toString(), selection = TextRange(1))
@@ -787,7 +829,6 @@ private fun MagicBox(
                             Text("Allow contacts to search people")
                         }
                     }
-                }
             }
         }
     }
@@ -1166,10 +1207,11 @@ private fun OnboardingDialog(store: LauncherStore, onFinish: () -> Unit) {
                         0 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                             Text("MinkLauncher is a minimal keyboard launcher designed around fast, keyboard-based input.", fontSize = 18.sp)
                             OnboardingPoint(Icons.Default.FilterAlt, "Less visual noise", "One home page, eight shortcuts, and only five drawer apps.")
-                            OnboardingPoint(Icons.Default.Keyboard, "Type what you need", "The Magic Box turns a short command into an action.")
+                            OnboardingPoint(Icons.Default.Keyboard, "Just start typing", "On a physical-keyboard phone, press any text key from home. The Magic Box appears with that first character already entered.")
                             OnboardingPoint(Icons.Default.Search, "Everything is still reachable", "Use ? to find any installed app.")
                         }
                         1 -> Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text("The Magic Box is ready from the moment home opens. No tap is required on a physical keyboard.", color = Muted, fontSize = 12.sp)
                             listOf(
                                 "@" to "Text a contact",
                                 "#" to "Call a contact",

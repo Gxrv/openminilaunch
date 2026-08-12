@@ -19,6 +19,7 @@ Current version: **0.5.0**. Feature releases show existing users a one-time in-a
 - A compact drawer containing up to five selected apps
 - Real installed-app icons and an alphabetical jump rail in both app pickers
 - A searchable Magic Box:
+  - Physical-keyboard instant typing — press any printable key from the home screen to reveal the already-focused Magic Box with the first character preserved
   - Plain text — search locally accessible file names, then delegate web queries to Android's selected search handler
   - `@name message` — choose a contact, then open the configured/default SMS or RCS composer with recipient and text filled
   - `#name` — choose a contact, confirm in MinkLauncher, then place the call directly

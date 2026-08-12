@@ -2,6 +2,8 @@ MinkLauncher Open is a focused, one-page Android home-screen launcher designed a
 
 The home screen provides a two-item to-do preview, eight configurable shortcuts, a five-app drawer, and the Magic Box command field.
 
+On a physical-keyboard phone, just start typing from the home screen. The already-focused Magic Box appears with the first character preserved; no tap is required.
+
 Magic Box commands:
 
 • @ — choose a contact and compose a message
