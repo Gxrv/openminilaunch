@@ -6,16 +6,22 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
+import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.LruCache
 import android.util.Size
+import android.webkit.MimeTypeMap
+import androidx.core.content.FileProvider
+import java.io.File
 import java.util.ArrayDeque
 
 class FileSearchRepository(private val context: Context) {
     private var indexedTrees: Set<String> = emptySet()
     private var documentIndex: List<FileSearchResult> = emptyList()
     private var indexedAt: Long = 0L
+    private var allFilesIndex: List<FileSearchResult> = emptyList()
+    private var allFilesIndexedAt: Long = 0L
     private val thumbnailCache = object : LruCache<String, Bitmap>(THUMBNAIL_CACHE_BYTES) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
@@ -31,7 +37,7 @@ class FileSearchRepository(private val context: Context) {
         )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
     }.getOrNull() ?: "Selected folder"
 
-    fun search(query: String, folders: List<SearchFolder>, includeMedia: Boolean): List<FileSearchResult> {
+    fun search(query: String, folders: List<SearchFolder>, includeMedia: Boolean, includeAllFiles: Boolean): List<FileSearchResult> {
         val clean = query.trim()
         if (clean.length < 2) return emptyList()
         val results = mutableListOf<FileSearchResult>()
@@ -40,6 +46,12 @@ class FileSearchRepository(private val context: Context) {
         results += documentIndex.asSequence()
             .filter { it.name.contains(clean, ignoreCase = true) }
             .take(MAX_RESULTS_PER_TYPE)
+        if (includeAllFiles) {
+            ensureAllFilesIndex()
+            results += allFilesIndex.asSequence()
+                .filter { it.name.contains(clean, ignoreCase = true) }
+                .take(MAX_RESULTS_PER_TYPE)
+        }
         return results.distinctBy { it.uri }.sortedWith(
             compareBy<FileSearchResult> { !it.name.startsWith(clean, ignoreCase = true) }
                 .thenByDescending { it.modifiedAt }
@@ -64,6 +76,11 @@ class FileSearchRepository(private val context: Context) {
         indexedTrees = emptySet()
         documentIndex = emptyList()
         indexedAt = 0L
+    }
+
+    fun invalidateAllFiles() {
+        allFilesIndex = emptyList()
+        allFilesIndexedAt = 0L
     }
 
     private fun searchMedia(query: String): List<FileSearchResult> = listOf(
@@ -123,6 +140,36 @@ class FileSearchRepository(private val context: Context) {
         indexedAt = System.currentTimeMillis()
     }
 
+    private fun ensureAllFilesIndex() {
+        if (System.currentTimeMillis() - allFilesIndexedAt < INDEX_REFRESH_INTERVAL_MS) return
+        val root = Environment.getExternalStorageDirectory()
+        val pending = ArrayDeque<File>().apply { add(root) }
+        allFilesIndex = buildList {
+            while (pending.isNotEmpty() && size < MAX_INDEXED_DOCUMENTS) {
+                val current = pending.removeFirst()
+                current.listFiles()?.forEach { file ->
+                    if (file.isDirectory) {
+                        if (file.name !in IGNORED_DIRECTORIES) pending += file
+                    } else {
+                        val mimeType = MimeTypeMap.getSingleton()
+                            .getMimeTypeFromExtension(file.extension.lowercase()) ?: "application/octet-stream"
+                        runCatching {
+                            add(
+                                FileSearchResult(
+                                    name = file.name,
+                                    uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file),
+                                    mimeType = mimeType,
+                                    modifiedAt = file.lastModified(),
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        allFilesIndexedAt = System.currentTimeMillis()
+    }
+
     private fun indexTree(treeUri: Uri): List<FileSearchResult> = runCatching {
         val resolver = context.contentResolver
         val queue = ArrayDeque<String>()
@@ -162,6 +209,7 @@ class FileSearchRepository(private val context: Context) {
         const val MAX_RESULTS_PER_TYPE = 6
         const val INDEX_REFRESH_INTERVAL_MS = 60_000L
         const val THUMBNAIL_CACHE_BYTES = 16 * 1024 * 1024
+        val IGNORED_DIRECTORIES = setOf("Android", ".thumbnails", ".Trash")
         val DOCUMENT_PROJECTION = arrayOf(
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
             DocumentsContract.Document.COLUMN_DISPLAY_NAME,

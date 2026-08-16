@@ -1,44 +1,72 @@
 # MinkLauncher Open
 
-A fully open-source, focused Android home-screen launcher built with Kotlin and Jetpack Compose.
+A focused, keyboard-first Android home-screen launcher and digital assistant built with Kotlin and Jetpack Compose.
 
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
-
-Current version: **0.5.0**. Feature releases show existing users a one-time in-app update notice covering new behavior, privacy impact, and any optional permissions; the onboarding tutorial is updated alongside each release.
+Current version: **0.11.0**. Feature releases show existing users a one-time in-app update notice covering new behavior, privacy impact, and any optional permissions; the onboarding tutorial is updated alongside each release.
 
 ## Included
 
 - Date header and settings access
-- First-run onboarding for the launcher, Magic Box, to-dos, and permissions
+- First-run onboarding for the launcher, Magic Box, to-dos, search, and permissions, followed by a dedicated shortcut-app setup step
 - Replayable onboarding from Settings, including permission setup
 - Two-at-a-time, horizontally snapping to-do preview
 - Eight home shortcuts: Note, Event, Weather, To-do, Call, Message, Files, and Drawer
-- Weather opens only an installed app explicitly selected by the user
+- Long-press shortcut edit mode with persistent drag reordering and a reset control in Settings
+- An active-only **Conversations** space opened from Home:
+  - Non-message notifications are ignored
+  - Messages are grouped into conversation timelines and ordered newest first
+  - One-to-one conversations can merge across apps when Android exposes a shared contact identity; ambiguous identities remain separate
+  - Each mini conversation shows its source messaging apps and can open the latest provider's full conversation
+  - Inline reply appears only when a provider supplies a compatible Android `RemoteInput` action
+  - Successful reply handoff is acknowledged with `Sent`; MinkLauncher Open does not claim delivery or read status
+  - Conversation contents and replies remain transient in memory, are not retained as history, and are never sent to Katoa Apps
+- A horizontally adjacent widget page for up to four Android app widgets, including an app-grouped visual picker, system binding/configuration, reordering, and removal
+- A dedicated **Mink’s Day** page to the left of Home:
+  - Six illustrated Mink states reflect the time of day and, when optional Usage Access is enabled, today’s screen time, social share, app switching, and uninterrupted app stretches
+  - A compact Home card opens the page and summarizes today without turning the launcher into a dashboard
+  - The daily social goal can be set to 30, 60, 90, or 120 minutes
+  - Users can explicitly select which installed apps count as social, or leave the list empty to use Android’s app categories
+  - Top-app activity and short, non-judgmental observations are calculated only while the app is open
+  - MinkLauncher Open stores the goal and category choices, but does not create a separate usage-history database
+  - Activity is refreshed only while MinkLauncher Open is visible; the app has no Internet permission and cannot upload usage data itself
+  - Without Usage Access, the page remains available as a time-of-day companion
+- Weather opens a user-selected app, with Weather.com as the browser fallback
 - Configurable default apps for the six external shortcuts
 - One-tap reset back to each shortcut's system intent
 - A compact drawer containing up to five selected apps
 - Real installed-app icons and an alphabetical jump rail in both app pickers
 - A searchable Magic Box:
   - Physical-keyboard instant typing — press any printable key from the home screen to reveal the already-focused Magic Box with the first character preserved
-  - Plain text — search locally accessible file names, then delegate web queries to Android's selected search handler
-  - `@name message` — choose a contact, then open the configured/default SMS or RCS composer with recipient and text filled
-  - `#name` — choose a contact, confirm in MinkLauncher, then place the call directly
+  - Plain text — search locally accessible file names, then search the web with Android's system browser or a user-selected search app
+  - Plain text can also be handed to a user-selected app that accepts shared text, for review and submission there
+  - `@name message` — choose a contact, then send carrier SMS now or hand the recipient and text to an Android-compatible messaging app
+  - `#name` — choose a contact, then place the confirmed carrier call or open Android’s compatible calling-app chooser
   - `-task` — save an internal to-do
-  - `$text` — enter a multiline note using Android's standard create-note or text-sharing contracts
+  - `$text` — enter a multiline note; prefer Android's dedicated create-note action, use the chosen Notes app when compatible, and use Samsung Notes' text handoff on Samsung devices
   - `+text` — create a calendar event with the text as its description
   - `?app` — search and launch any installed app
+- **Mink Assistant** integration: invoke the same keyboard-first Magic Box over the current app using the phone's system assistant gesture
+- Direct SMS is available only while MinkLauncher Open is the active assistant handler. Android may grant Send SMS access automatically as part of that role; MinkLauncher Open uses it only after the user approves a specific recipient and message. If it is not role-granted, it is requested on first use or from Settings.
+- Message behavior defaults to **Always ask**, which offers **Send SMS now**, **Choose messaging app**, and **Cancel**. Settings can instead remember **Always send as SMS** or **Always choose messaging app**; remembered modes treat pressing the Magic Box action as the user's approval and skip MinkLauncher Open's extra confirmation.
+- Direct sends use the carrier SMS stack, not RCS, and may incur carrier charges. The provider chooser first uses Android’s contact-aware messaging contract, then falls back to the SMS/RCS composer contract. The selected provider controls the final send.
+- Mink Assistant deliberately ignores assist context and requests no microphone, call-log, screen-reading, or screen-context access; selecting it replaces the current default digital assistant until the user changes it back
 - The five most recent plain-text searches are stored locally, with controls to reuse, delete, or clear them; hot-key actions are never added
-- Direct calling uses Android's Call permission; emergency numbers and failed direct-call attempts fall back to the system dialer
+- Direct calling uses Android's Call permission; emergency numbers and failed direct-call attempts fall back to the system dialer. **Choose calling app** sends the number through Android’s dial intent, so only apps that publicly support telephone dialing appear.
+- AI setup shows a curated list of known assistants plus an explicit fallback list of apps accepting shared text
+- Android exposes the selected system assistant role, but not a universal "AI app" capability; MinkLauncher Open therefore validates every selected app against the text-sharing contract
+- AI handoff does not call AI APIs, submit prompts silently, or render responses inside MinkLauncher Open
 - Full to-do management: add, check, edit, delete, and reorder
 - Delete confirmation to protect against accidental taps and back-swipe gestures
 - Animated Magic Box to-do delivery into the newest widget page
 - System, light, and dark appearance modes
 - Swipe down anywhere on the home screen to expand notifications
-- Optional double-tap on empty Home space locks through Android's accessibility `GLOBAL_ACTION_LOCK_SCREEN`, preserving normal fingerprint and face unlock eligibility
+- Optionally enable the minimal **Double-tap screen lock** accessibility service, then double-tap empty home-screen space to lock like the power button. The service cannot read screen content, subscribe to accessibility events, perform gestures, or collect data.
 - Local persistence via SharedPreferences; no account or network is required
 - Privacy-first file search through Android's MediaStore and user-selected document folders; filenames never leave the device
-- Document search uses only folders selected through Android's Storage Access Framework, with an in-search reminder until one is selected
+- Document search can use user-selected folders or Android's optional All files access, with an in-search setup reminder until one is enabled
 - File results are grouped as Photos, Videos, Documents, and Audio, with locally generated thumbnails where Android provides them
+- App results from `?` launch immediately when tapped
+- Contact results distinguish Mobile, Work, Home, and custom phone-number labels
 
 ## Run
 
@@ -50,21 +78,44 @@ Open the folder in Android Studio or build from the terminal:
 
 The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
-For an unsigned release APK:
-
-```shell
-./gradlew --no-daemon clean lintDebug assembleRelease
-```
-
-The release artifact is generated at `app/build/outputs/apk/release/app-release-unsigned.apk`. The build requires JDK 17 or newer and Android SDK 35; Android Studio is not required.
-
-After installing, press the device Home button and select **MinkLauncher Open** as the home app. Contact permission is requested only when `@` or `#` search is used. Optional controls, including **MinkLauncher Open - Double Tap to Lock Screen** in Android Accessibility settings, are linked from Settings.
+After installing, press the device Home button and select **MinkLauncher Open** as the home app. Contact permission is requested for `@` and `#` search. Notification access is optional special access granted on Android's dedicated settings screen after MinkLauncher Open explains its use. Usage Access is separately optional and is used only for local Mink’s Day calculations; app activity and insights are never sent to Katoa Apps. Direct SMS is optional and requires MinkLauncher Open to be the active assistant handler; Android may grant Send SMS access with that role. Advanced permission controls are also linked from Settings.
 
 On first launch, MinkLauncher Open explicitly opens Android's default Home-app prompt. If it is dismissed, it can be reopened from **Settings → Default home app**.
 
+After onboarding and its initial permission prompts, each external shortcut must be assigned deliberately in a separate setup dialog. The user can choose an installed app or tap **Use system defaults for remaining**; MinkLauncher Open no longer silently assumes every system handler.
+
+## Test contacts
+
+The repository includes a development-only contact fixture with three plausible fictional names for every first-name initial A–Z. Twelve contacts have an additional Home or Work number for multi-number testing. All 78 entries use numbers from the reserved `202-555-01xx` fictional range and are not packaged in the app.
+
+Regenerate and import the fixture into a running emulator with:
+
+```shell
+ruby tools/generate_test_contacts.rb
+tools/import_test_contacts.sh emulator-5554
+```
+
+Android's Contacts importer opens so the developer can confirm the destination account. This is never run by the app, Gradle, or Android Studio. The script verifies Android's emulator flag and refuses physical devices even if their serial is supplied. It also exits without reopening the importer when the fixture is already staged on the emulator.
+
+## Source layout
+
+- `MainActivity.kt` — activity lifecycle, theme, and top-level navigation
+- `HomeScreen.kt` — launcher home, Magic Box, and local-search presentation
+- `OnboardingScreen.kt` — first-run setup, update notice, and replayable tutorial
+- `SettingsScreen.kt` — launcher preferences and installed-app pickers
+- `TodosScreen.kt` — to-do management
+- `DeviceActions.kt` — Android intents and device integrations
+- `LauncherStore.kt` — locally persisted launcher state
+- `FileSearchRepository.kt` — MediaStore and selected-folder search
+- `NotificationHub.kt` — transient conversation parsing, cross-provider contact grouping, listener service, and provider-owned replies
+- `NotificationHubScreen.kt` — conversation list, mini timelines, full-conversation handoff, and inline reply UI
+- `WidgetPage.kt` — Android widget hosting, binding, configuration, lifecycle, and page presentation
+- `UsageInsights.kt` — local usage-event analysis, state selection, and privacy-bounded usage models
+- `MinkDayScreen.kt` — Mink’s Day UI, six-state sprite renderer, social-app selection, and compact Home status
+
 ## Privacy
 
-MinkLauncher Open has no accounts, ads, analytics, trackers, or application server. Search, to-dos, settings, and file indexing stay local. See [PRIVACY.md](PRIVACY.md) for permission details and the boundaries of Android intent handoffs.
+MinkLauncher Open has no accounts, ads, analytics, trackers, or application server. Search, to-dos, settings, conversations, widget configuration, and usage insights stay local. See [PRIVACY.md](PRIVACY.md) for permission details and the boundaries of Android intent handoffs.
 
 ## License
 

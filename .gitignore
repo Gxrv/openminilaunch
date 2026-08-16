@@ -1,10 +1,44 @@
-.gradle/
-.idea/
-local.properties
+# Gradle and Kotlin caches
+/.gradle/
+/.kotlin/
 **/build/
+
+# Android Studio and local SDK configuration
+/.idea/
+local.properties
 *.iml
-.DS_Store
+/captures/
+/.navigation/
+
+# Native build output
+/.cxx/
+/.externalNativeBuild/
+**/.cxx/
+**/.externalNativeBuild/
+
+# Packaged and compiled output
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.hprof
+/app/release/
+
+# Signing material and machine-local secrets
 *.jks
 *.keystore
+*.p12
+*.pfx
+*.pem
 keystore.properties
+secrets.properties
+google-services.json
+.env
+.env.*
+!.env.example
+
+# Operating-system and machine-generated files
+.DS_Store
+Thumbs.db
 gradle/gradle-daemon-jvm.properties
