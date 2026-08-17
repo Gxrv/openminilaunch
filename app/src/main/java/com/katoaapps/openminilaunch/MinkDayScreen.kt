@@ -339,7 +339,7 @@ private fun UsageAccessCard(onEnable: () -> Unit) {
             Icon(Icons.Default.Security, null, tint = Rust)
             Text("Optional Usage Access", Modifier.padding(start = 10.dp), fontWeight = FontWeight.Bold)
         }
-        Text("Android can let MinkLauncher Open measure foreground activity for the social apps you track. Other apps are excluded from your trail and totals.", color = Muted, fontSize = 13.sp)
+        Text("Android can let MinkLauncher OpenSource measure foreground activity for the social apps you track. Other apps are excluded from your trail and totals.", color = Muted, fontSize = 13.sp)
         Text("No activity history, tracked-app list, or insight is uploaded to Katoa Apps.", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         Button(onClick = onEnable, modifier = Modifier.fillMaxWidth()) { Text("Open Usage Access") }
     }

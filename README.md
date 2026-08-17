@@ -1,4 +1,4 @@
-# MinkLauncher Open
+# MinkLauncher OpenSource
 
 A focused, keyboard-first Android home-screen launcher and digital assistant built with Kotlin and Jetpack Compose.
 
@@ -19,7 +19,7 @@ Current version: **Open 1.0** (`1.0.0`). Feature releases show existing users a 
   - One-to-one conversations can merge across apps when Android exposes a shared contact identity; ambiguous identities remain separate
   - Each mini conversation shows its source apps and can open the latest provider's full conversation
   - Inline reply appears only when a provider supplies a compatible Android `RemoteInput` action
-  - Successful reply handoff is acknowledged with `Sent`; MinkLauncher Open does not claim delivery or read status
+  - Successful reply handoff is acknowledged with `Sent`; MinkLauncher OpenSource does not claim delivery or read status
   - Conversation contents and replies remain transient in memory, are not retained as history, and are never sent to Katoa Apps
 - A horizontally adjacent widget page for up to four Android app widgets, including an app-grouped visual picker, system binding/configuration, reordering, and removal
 - A dedicated **Mink’s Day** page to the left of Home:
@@ -29,8 +29,8 @@ Current version: **Open 1.0** (`1.0.0`). Feature releases show existing users a 
   - Android’s Social category is the visible default; selecting custom apps replaces it, and Restore defaults returns to Android’s category
   - Selected tracked apps stay pinned in a fixed section at the top of the picker for quick review and removal
   - Top-app activity and short, non-judgmental observations are calculated only while the app is open
-  - MinkLauncher Open stores the goal and category choices, but does not create a separate usage-history database
-  - Activity is refreshed only while MinkLauncher Open is visible; non-tracked apps can end a session but never enter the trail or totals
+  - MinkLauncher OpenSource stores the goal and category choices, but does not create a separate usage-history database
+  - Activity is refreshed only while MinkLauncher OpenSource is visible; non-tracked apps can end a session but never enter the trail or totals
   - The app has no Internet permission and cannot upload usage data itself
   - Without Usage Access, the page remains available as a time-of-day companion
 - Weather opens a user-selected app, with Weather.com as the browser fallback
@@ -49,15 +49,15 @@ Current version: **Open 1.0** (`1.0.0`). Feature releases show existing users a 
   - `+text` — create a calendar event with the text as its description
   - `?app` — search and launch any installed app
 - **Mink Assistant** integration: invoke the same keyboard-first Magic Box over the current app using the phone's system assistant gesture
-- Direct SMS is available only while MinkLauncher Open is the active assistant handler. Android may grant Send SMS access automatically as part of that role; MinkLauncher Open uses it only after the user approves a specific recipient and message. If it is not role-granted, it is requested on first use or from Settings.
-- Message behavior defaults to **Always ask**, which offers **Send SMS now**, **Choose messaging app**, and **Cancel**. Settings can instead remember **Always send as SMS** or **Always choose messaging app**; remembered modes treat pressing the Magic Box action as the user's approval and skip MinkLauncher Open's extra confirmation.
+- Direct SMS is available only while MinkLauncher OpenSource is the active assistant handler. Android may grant Send SMS access automatically as part of that role; MinkLauncher OpenSource uses it only after the user approves a specific recipient and message. If it is not role-granted, it is requested on first use or from Settings.
+- Message behavior defaults to **Always ask**, which offers **Send SMS now**, **Choose messaging app**, and **Cancel**. Settings can instead remember **Always send as SMS** or **Always choose messaging app**; remembered modes treat pressing the Magic Box action as the user's approval and skip MinkLauncher OpenSource's extra confirmation.
 - Direct sends use the carrier SMS stack, not RCS, and may incur carrier charges. The provider chooser first uses Android’s contact-aware messaging contract, then falls back to the SMS/RCS composer contract. The selected provider controls the final send.
 - Mink Assistant deliberately ignores assist context and requests no microphone, call-log, screen-reading, or screen-context access; selecting it replaces the current default digital assistant until the user changes it back
 - The five most recent plain-text searches are stored locally, with controls to reuse, delete, or clear them; hot-key actions are never added
 - Direct calling uses Android's Call permission; emergency numbers and failed direct-call attempts fall back to the system dialer. **Choose calling app** sends the number through Android’s dial intent, so only apps that publicly support telephone dialing appear.
 - AI setup shows a curated list of known assistants plus an explicit fallback list of apps accepting shared text
-- Android exposes the selected system assistant role, but not a universal "AI app" capability; MinkLauncher Open therefore validates every selected app against the text-sharing contract
-- AI handoff does not call AI APIs, submit prompts silently, or render responses inside MinkLauncher Open
+- Android exposes the selected system assistant role, but not a universal "AI app" capability; MinkLauncher OpenSource therefore validates every selected app against the text-sharing contract
+- AI handoff does not call AI APIs, submit prompts silently, or render responses inside MinkLauncher OpenSource
 - Full to-do management: add, check, edit, delete, and reorder
 - Delete confirmation to protect against accidental taps and back-swipe gestures
 - Animated Magic Box to-do delivery into the newest widget page
@@ -81,11 +81,11 @@ Open the folder in Android Studio or build from the terminal:
 
 The APK is generated at `app/build/outputs/apk/debug/app-debug.apk`.
 
-After installing, press the device Home button and select **MinkLauncher Open** as the home app. Contact permission is requested for `@` and `#` search. Notification access is optional special access granted on Android's dedicated settings screen after MinkLauncher Open explains its use. Usage Access is separately optional and is used only for local Mink’s Day calculations; app activity and insights are never sent to Katoa Apps. Direct SMS is optional and requires MinkLauncher Open to be the active assistant handler; Android may grant Send SMS access with that role. Advanced permission controls are also linked from Settings.
+After installing, press the device Home button and select **MinkLauncher OpenSource** as the home app. Contact permission is requested for `@` and `#` search. Notification access is optional special access granted on Android's dedicated settings screen after MinkLauncher OpenSource explains its use. Usage Access is separately optional and is used only for local Mink’s Day calculations; app activity and insights are never sent to Katoa Apps. Direct SMS is optional and requires MinkLauncher OpenSource to be the active assistant handler; Android may grant Send SMS access with that role. Advanced permission controls are also linked from Settings.
 
-On first launch, MinkLauncher Open explicitly opens Android's default Home-app prompt. If it is dismissed, it can be reopened from **Settings → Default home app**.
+On first launch, MinkLauncher OpenSource explicitly opens Android's default Home-app prompt. If it is dismissed, it can be reopened from **Settings → Default home app**.
 
-After onboarding and its initial permission prompts, each external shortcut must be assigned deliberately in a separate setup dialog. The user can choose an installed app or tap **Use system defaults for remaining**; MinkLauncher Open no longer silently assumes every system handler.
+After onboarding and its initial permission prompts, each external shortcut must be assigned deliberately in a separate setup dialog. The user can choose an installed app or tap **Use system defaults for remaining**; MinkLauncher OpenSource no longer silently assumes every system handler.
 
 ## Test contacts
 
@@ -118,7 +118,11 @@ Android's Contacts importer opens so the developer can confirm the destination a
 
 ## Privacy
 
-MinkLauncher Open has no accounts, ads, analytics, trackers, or application server. Search, to-dos, settings, conversations, widget configuration, and usage insights stay local. See [PRIVACY.md](PRIVACY.md) for permission details and the boundaries of Android intent handoffs.
+MinkLauncher OpenSource has no accounts, ads, analytics, trackers, or application server. Search, to-dos, settings, conversations, widget configuration, and usage insights stay local. See [PRIVACY.md](PRIVACY.md) for permission details and the boundaries of Android intent handoffs.
+
+## Terms of use
+
+The official application and project resources are governed by the [MinkLauncher Terms of Use](TERMS.md). Those terms do not reduce the source-code rights granted by Apache License 2.0.
 
 ## License
 

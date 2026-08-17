@@ -452,7 +452,7 @@ private fun WidgetSizeDialog(
                     }
                 }
                 Text(
-                    "MinkLauncher Open uses a four-column widget grid. The widget app chooses the layout it displays inside this space.",
+                    "MinkLauncher OpenSource uses a four-column widget grid. The widget app chooses the layout it displays inside this space.",
                     color = Muted,
                     fontSize = 12.sp,
                 )

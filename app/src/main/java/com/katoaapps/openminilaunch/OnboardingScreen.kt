@@ -141,7 +141,7 @@ internal fun FileSearchScopeDialog(
     AlertDialog(
         onDismissRequest = onSkip,
         icon = { Icon(Icons.Default.FolderOpen, null, tint = Rust) },
-        title = { Text("Where should MinkLauncher Open search?") },
+        title = { Text("Where should MinkLauncher OpenSource search?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("Choose a folder for document search. You can add or remove folders later in Settings.")
@@ -154,7 +154,7 @@ internal fun FileSearchScopeDialog(
                         UpdatePoint(
                             Icons.Default.Folder,
                             "Choose a folder",
-                            "MinkLauncher Open searches only folders you explicitly approve through Android.",
+                            "MinkLauncher OpenSource searches only folders you explicitly approve through Android.",
                         )
                     }
                 }
@@ -189,8 +189,8 @@ internal fun UsageAccessDisclosureDialog(onContinue: () -> Unit, onDismiss: () -
         title = { Text("Let Mink reflect your day?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Android’s Usage Access lets MinkLauncher Open measure when your tracked social apps are in the foreground and for how long.")
-                Text("MinkLauncher Open uses this only to calculate today’s Mink state and insights on your device. It does not upload your activity, sell it, or keep a separate usage-history database.")
+                Text("Android’s Usage Access lets MinkLauncher OpenSource measure when your tracked social apps are in the foreground and for how long.")
+                Text("MinkLauncher OpenSource uses this only to calculate today’s Mink state and insights on your device. It does not upload your activity, sell it, or keep a separate usage-history database.")
                 Text("This is optional. Mink’s page still works as a time-of-day companion if you skip it, and you can revoke access whenever you want.")
             }
         },
@@ -254,7 +254,7 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                 Box(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
                     when (page) {
                         0 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                            Text("MinkLauncher Open is a minimal keyboard launcher designed around fast, keyboard-based input.", fontSize = 18.sp)
+                            Text("MinkLauncher OpenSource is a minimal keyboard launcher designed around fast, keyboard-based input.", fontSize = 18.sp)
                             OnboardingPoint(Icons.Default.FilterAlt, "Less visual noise", "One focused home page, eight shortcuts, and only five drawer apps.")
                             OnboardingPoint(Icons.Default.Keyboard, "Just start typing", "On a physical-keyboard phone, press any text key from home. The Magic Box appears with that first character already entered.")
                             OnboardingPoint(Icons.Default.Search, "Everything is still reachable", "Use ? to find any installed app.")
@@ -280,7 +280,7 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                         3 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                             Text("Type normally in the Magic Box to find local files, search the web, or hand the query to an AI app you choose.", fontSize = 18.sp)
                             OnboardingPoint(Icons.Default.History, "Recent searches", "Your last five plain-text searches stay on this device. Reuse one, delete one, or clear them all from the empty Magic Box.")
-                            OnboardingPoint(Icons.Default.AutoAwesome, "AI is optional", "MinkLauncher Open shares your query only after you tap AI. The selected app then handles it under its own privacy terms.")
+                            OnboardingPoint(Icons.Default.AutoAwesome, "AI is optional", "MinkLauncher OpenSource shares your query only after you tap AI. The selected app then handles it under its own privacy terms.")
                             OutlinedButton(onClick = { pickingAi = true }, modifier = Modifier.fillMaxWidth()) {
                                 Icon(Icons.Default.AutoAwesome, null)
                                 Text(
@@ -288,17 +288,17 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                                     Modifier.padding(start = 8.dp),
                                 )
                             }
-                            Text("Optional. Skip this and MinkLauncher Open will ask the first time you tap AI.", color = Muted, fontSize = 12.sp)
+                            Text("Optional. Skip this and MinkLauncher OpenSource will ask the first time you tap AI.", color = Muted, fontSize = 12.sp)
                             OnboardingPoint(Icons.Default.PhotoLibrary, "Media filenames", "Optional access finds photos, videos, and audio through Android’s media index.")
                             OnboardingPoint(Icons.Default.FolderOpen, "Choose your scope", "Select specific folders, or optionally grant full-device file access for broader filename search.")
-                            OnboardingPoint(Icons.Default.Security, "Never sent to us", "MinkLauncher Open does not receive your queries, filenames, or selected folder locations.")
+                            OnboardingPoint(Icons.Default.Security, "Never sent to us", "MinkLauncher OpenSource does not receive your queries, filenames, or selected folder locations.")
                         }
                         4 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                            Text("MinkLauncher Open is also a keyboard-first digital assistant, putting the Magic Box behind your phone’s assistant gesture.", fontSize = 18.sp)
+                            Text("MinkLauncher OpenSource is also a keyboard-first digital assistant, putting the Magic Box behind your phone’s assistant gesture.", fontSize = 18.sp)
                             OnboardingPoint(Icons.Default.Keyboard, "Keyboard first", "Invoke it over any app and start typing immediately. The same hotkeys, local file search, Web, and AI handoffs remain available.")
                             OnboardingPoint(Icons.Default.TouchApp, "A deliberate choice", "This replaces Gemini, Bixby, or your current default assistant until you change it back in Android settings.")
                             OnboardingPoint(Icons.Default.PrivacyTip, "No screen inspection", "Mink Assistant ignores assist context and does not request microphone, call-log, screen-reading, or screen-context access.")
-                            OnboardingPoint(Icons.Default.Sms, "Direct SMS", "Android may grant Send SMS access with the Assistant role. MinkLauncher Open uses it only after you choose a contact, write the message, and press the @ action.")
+                            OnboardingPoint(Icons.Default.Sms, "Direct SMS", "Android may grant Send SMS access with the Assistant role. MinkLauncher OpenSource uses it only after you choose a contact, write the message, and press the @ action.")
                             Button(
                                 onClick = { assistantRoleSettings.launch(actions.assistantRoleSelectionIntent()) },
                                 modifier = Modifier.fillMaxWidth(),
@@ -322,7 +322,7 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                             Text("Swipe right from Home to visit Mink’s Day: a private view of time spent in the social apps you want to limit.", fontSize = 18.sp)
                             OnboardingPoint(Icons.Default.Pets, "Six gentle states", "Mink walks, moves steadily, gets distracted, checks a phone, rests, or goes to sleep based on today’s local activity and the time of day.")
                             OnboardingPoint(Icons.Default.Tune, "Your tracked apps and goal", "Use Android’s Social category or choose the apps you want to limit, then set a daily tracked-time goal.")
-                            OnboardingPoint(Icons.Default.Security, "Calculated on your device", "Other apps are excluded from the trail. MinkLauncher Open never sends tracked activity, app choices, or insights to Katoa Apps.")
+                            OnboardingPoint(Icons.Default.Security, "Calculated on your device", "Other apps are excluded from the trail. MinkLauncher OpenSource never sends tracked activity, app choices, or insights to Katoa Apps.")
                             OnboardingPoint(Icons.Default.VisibilityOff, "Completely optional", "Without Usage Access, Mink’s page remains available as a quiet time-of-day companion.")
                         }
                         6 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
@@ -331,10 +331,10 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                             OnboardingPoint(Icons.Default.Widgets, "Widget page", "Swipe left from Home to add up to four Android widgets. Swipe right or use Back to return Home.")
                             OnboardingPoint(Icons.Default.Pets, "Mink’s Day", "Swipe right from Home for local daily insights. Swipe left or use Back to return Home.")
                             OnboardingPoint(Icons.Default.DragIndicator, "Arrange your grid", "Long-press any Home shortcut to enter edit mode, then drag shortcuts into your preferred order.")
-                            OnboardingPoint(Icons.Default.PrivacyTip, "Active and local", "MinkLauncher Open does not keep conversation history. Message text and replies remain in memory and are never sent to Katoa Apps.")
+                            OnboardingPoint(Icons.Default.PrivacyTip, "Active and local", "MinkLauncher OpenSource does not keep conversation history. Message text and replies remain in memory and are never sent to Katoa Apps.")
                         }
                         else -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                            Text("MinkLauncher Open asks only for access tied to features you use.", fontSize = 18.sp)
+                            Text("MinkLauncher OpenSource asks only for access tied to features you use.", fontSize = 18.sp)
                             Row(
                                 Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp))
                                     .background(MaterialTheme.colorScheme.surfaceContainerLow).padding(16.dp),
@@ -352,7 +352,7 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                             OnboardingPoint(Icons.Default.PhotoLibrary, "Media", "Optional access searches photo, video, and audio filenames locally.")
                             OnboardingPoint(Icons.Default.Forum, "Conversation access", "Optional notification access powers message and email conversations. Other notification types are ignored, and you can revoke access whenever you want.")
                             OnboardingPoint(Icons.Default.Pets, "Mink’s Day usage", "Optional Usage Access measures foreground time and opens for your tracked social apps only, entirely on this device.")
-                            Text("For documents, Android lets you choose specific folders. MinkLauncher Open cannot search outside folders you approve.", color = Muted, fontSize = 13.sp)
+                            Text("For documents, Android lets you choose specific folders. MinkLauncher OpenSource cannot search outside folders you approve.", color = Muted, fontSize = 13.sp)
                             Text("Android will show Contacts and Call prompts next. If Mink Assistant is active and your messaging choice includes direct SMS, Android may grant or request Send SMS access before the optional Conversations and Mink’s Day explanations. Media access appears only when you enable file search.", color = Muted)
                         }
                     }

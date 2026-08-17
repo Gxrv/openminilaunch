@@ -67,7 +67,7 @@ internal data class MinkDaySummary(
                 state = if (hour >= 22 || hour < 5) MinkState.SLEEPING else MinkState.WALKING,
                 headline = "Mink lost the trail",
                 detail = "Today’s tracked-app activity could not be read just now.",
-                errorMessage = "MinkLauncher Open couldn’t read Android’s usage data. Try again, or check Usage Access in Settings.",
+                errorMessage = "MinkLauncher OpenSource couldn’t read Android’s usage data. Try again, or check Usage Access in Settings.",
             )
         }
     }

@@ -593,6 +593,7 @@ internal fun MagicBox(
     var showSmsAssistantDisclosure by remember { mutableStateOf(false) }
     var fileResults by remember { mutableStateOf<List<FileSearchResult>>(emptyList()) }
     var fileSearchLoading by remember { mutableStateOf(false) }
+    val fileSearchRequests = remember { FileSearchRequestTracker() }
     var aiAppsLoaded by remember { mutableStateOf(false) }
     val curatedAiApps by produceState<List<LaunchableApp>>(initialValue = emptyList()) {
         value = withContext(Dispatchers.IO) { actions.curatedAiApps() }
@@ -739,16 +740,26 @@ internal fun MagicBox(
     val plainQuery = text.text.trim().takeIf { prefix !in listOf('@', '#', '-', '$', '+', '?') }.orEmpty()
     val indexedFolderUris = store.searchFolders.map { it.uri }
     LaunchedEffect(plainQuery, indexedFolderUris, hasMediaAccess) {
+        val request = fileSearchRequests.begin(plainQuery)
         if (plainQuery.length < 2) {
             fileResults = emptyList()
             fileSearchLoading = false
+            magicResultsScroll.scrollTo(0)
         } else {
             fileSearchLoading = true
-            delay(180)
-            fileResults = withContext(Dispatchers.IO) {
-                fileSearchRepository.search(plainQuery, store.searchFolders.toList(), hasMediaAccess)
+            try {
+                delay(180)
+                val folders = store.searchFolders.toList()
+                val results = withContext(Dispatchers.IO) {
+                    fileSearchRepository.search(request.query, folders, hasMediaAccess)
+                }
+                if (fileSearchRequests.isCurrent(request)) {
+                    fileResults = results
+                    magicResultsScroll.scrollTo(0)
+                }
+            } finally {
+                if (fileSearchRequests.isCurrent(request)) fileSearchLoading = false
             }
-            fileSearchLoading = false
         }
     }
     val actionColor = when (prefix) {
@@ -780,10 +791,12 @@ internal fun MagicBox(
     }
 
     fun clearCommand() {
+        fileSearchRequests.invalidate()
         text = TextFieldValue()
         selectedContact = null
         lockedPrefix = null
         fileResults = emptyList()
+        fileSearchLoading = false
     }
 
     fun dismiss() {

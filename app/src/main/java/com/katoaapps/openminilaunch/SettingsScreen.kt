@@ -231,7 +231,7 @@ internal fun SettingsScreen(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             SectionLabel("LAUNCHER")
-            SettingsRow("Default home app", "Choose MinkLauncher Open as your launcher", Icons.Default.Home) { requestHomeRole() }
+            SettingsRow("Default home app", "Choose MinkLauncher OpenSource as your launcher", Icons.Default.Home) { requestHomeRole() }
             SettingsRow(
                 "Mink Assistant",
                 if (assistantRoleHeld) "Active · Magic Box from anywhere" else "Optional · use the system assistant gesture",
@@ -334,7 +334,7 @@ internal fun SettingsScreen(
             if (directCallsSupported) {
                 PermissionCard(
                     title = "Direct calls",
-                    description = "Used only after you confirm a # call in MinkLauncher Open.",
+                    description = "Used only after you confirm a # call in MinkLauncher OpenSource.",
                     granted = callsGranted,
                     icon = Icons.Default.Phone,
                     onGrant = { callPermission.launch(Manifest.permission.CALL_PHONE) },
@@ -364,7 +364,7 @@ internal fun SettingsScreen(
             }
             PermissionCard(
                 title = "Photos, videos & audio",
-                description = "Searches media filenames locally. MinkLauncher Open never uploads your library.",
+                description = "Searches media filenames locally. MinkLauncher OpenSource never uploads your library.",
                 granted = mediaGranted,
                 icon = Icons.Default.PhotoLibrary,
                 onGrant = { mediaPermission.launch(mediaReadPermissions()) },
@@ -385,7 +385,7 @@ internal fun SettingsScreen(
             HorizontalDivider(color = Sage)
             SectionLabel("FILE SEARCH")
             Text(
-                "Choose the document folders MinkLauncher Open may search. Only filenames are indexed, and everything remains on this device.",
+                "Choose the document folders MinkLauncher OpenSource may search. Only filenames are indexed, and everything remains on this device.",
                 color = Muted,
                 fontSize = 13.sp,
             )
@@ -420,6 +420,8 @@ internal fun SettingsScreen(
             HorizontalDivider(color = Sage)
             SectionLabel("INFO")
             SettingsRow("Email us", "contact@katoaapps.com", Icons.Default.Email) { actions.emailSupport() }
+            SettingsRow("Privacy policy", "How MinkLauncher OpenSource handles device data", Icons.Default.PrivacyTip) { actions.openPrivacyPolicy() }
+            SettingsRow("Terms of use", "Responsibilities, warranties, and data-loss limitations", Icons.Default.Gavel) { actions.openTermsOfUse() }
             SettingsRow("Repeat tutorial", "Review setup, Magic Box, Mink’s Day, Conversations, widgets, and permissions", Icons.Default.School) { onRepeatTutorial() }
             Row(Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
                 Text("Version", Modifier.weight(1f), fontWeight = FontWeight.Medium)
@@ -828,7 +830,7 @@ internal fun LockAccessibilityDisclosureDialog(onContinue: () -> Unit, onDismiss
         title = { Text("Enable double-tap to lock?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("To make double-tap behave like the power button, MinkLauncher Open uses Android's accessibility Lock screen action.")
+                Text("To make double-tap behave like the power button, MinkLauncher OpenSource uses Android's accessibility Lock screen action.")
                 Text("The service runs only when you double-tap empty Home space. It does not observe accessibility events, read screen content, perform gestures, or collect data.")
                 Text("Android will ask you to enable Double-tap screen lock. You can disable it at any time in Accessibility settings.")
             }
@@ -847,8 +849,8 @@ internal fun AssistantDisclosureDialog(active: Boolean, onContinue: () -> Unit, 
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text("Your phone's assistant gesture will open the keyboard-first Magic Box over your current app.")
-                Text("Choosing MinkLauncher Open replaces your current default digital assistant. You can switch back at any time in system settings.")
-                Text("Mink Assistant does not request microphone, call-log, screen-reading, or screen-context access. Android may grant Send SMS as part of the assistant role; MinkLauncher Open uses it only after you choose a recipient, write the message, and press the @ action.")
+                Text("Choosing MinkLauncher OpenSource replaces your current default digital assistant. You can switch back at any time in system settings.")
+                Text("Mink Assistant does not request microphone, call-log, screen-reading, or screen-context access. Android may grant Send SMS as part of the assistant role; MinkLauncher OpenSource uses it only after you choose a recipient, write the message, and press the @ action.")
             }
         },
         confirmButton = {
@@ -866,8 +868,8 @@ internal fun NotificationAccessDisclosureDialog(onContinue: () -> Unit, onDismis
         title = { Text("Enable Conversations?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Android notification access lets MinkLauncher Open read active message and email notifications, group them into conversations, and offer inline reply when the originating app provides a reply action.")
-                Text("Notifications outside messages and email are ignored. Conversation contents and replies are kept in memory only. They are not stored by MinkLauncher Open, uploaded, or sent to Katoa Apps.")
+                Text("Android notification access lets MinkLauncher OpenSource read active message and email notifications, group them into conversations, and offer inline reply when the originating app provides a reply action.")
+                Text("Notifications outside messages and email are ignored. Conversation contents and replies are kept in memory only. They are not stored by MinkLauncher OpenSource, uploaded, or sent to Katoa Apps.")
                 Text("Replies are handed directly to the app that created the notification. You can revoke access at any time in Android settings.")
             }
         },

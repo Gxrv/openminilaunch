@@ -327,6 +327,10 @@ class DeviceActions(private val context: Context) {
 
     fun emailSupport() = start(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:contact@katoaapps.com")))
 
+    fun openPrivacyPolicy() = start(Intent(Intent.ACTION_VIEW, Uri.parse("https://minklauncher.com/privacy")))
+
+    fun openTermsOfUse() = start(Intent(Intent.ACTION_VIEW, Uri.parse("https://minklauncher.com/terms")))
+
     fun webSearch(query: String, preferredPackage: String? = null): Boolean {
         val clean = query.trim()
         if (clean.isEmpty()) return false
