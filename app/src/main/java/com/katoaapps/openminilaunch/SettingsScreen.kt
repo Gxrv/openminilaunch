@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
@@ -134,7 +133,6 @@ internal fun SettingsScreen(
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
     }
     var mediaGranted by remember { mutableStateOf(hasMediaReadAccess(context)) }
-    var allFilesGranted by remember { mutableStateOf(hasAllFilesAccess(context)) }
     var callsGranted by remember {
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED)
     }
@@ -160,7 +158,6 @@ internal fun SettingsScreen(
                 appListRefresh++
                 contactsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
                 mediaGranted = hasMediaReadAccess(context)
-                allFilesGranted = hasAllFilesAccess(context)
                 callsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
                 smsGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED
                 lockServiceEnabled = actions.isLockServiceEnabled()
@@ -245,7 +242,7 @@ internal fun SettingsScreen(
             ThemeChooser(store.themePreference, store::setTheme)
             HorizontalDivider(color = Sage)
             SectionLabel("MINK’S DAY")
-            Text("Mink turns today’s app activity into gentle, on-device insights on the page to the left of Home.", color = Muted, fontSize = 13.sp)
+            Text("Mink measures time and opens only for the social apps you choose, then keeps those insights on this device.", color = Muted, fontSize = 13.sp)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 SOCIAL_GOAL_OPTIONS.forEach { minutes ->
                     FilterChip(
@@ -257,7 +254,7 @@ internal fun SettingsScreen(
                 }
             }
             SettingsRow(
-                "Apps counted as social",
+                "Apps you want to limit",
                 if (store.socialPackages.isEmpty()) "Automatic Android categories" else "${store.socialPackages.size} selected",
                 Icons.Default.Apps,
             ) { pickingSocialApps = true }
@@ -312,7 +309,7 @@ internal fun SettingsScreen(
             SectionLabel("PERMISSIONS")
             PermissionCard(
                 title = "Mink’s Day usage",
-                description = "Reads app activity and screen-time events only to calculate private, on-device daily insights.",
+                description = "Reads foreground activity for your tracked social apps only to calculate private, on-device daily insights.",
                 granted = usageAccessGranted,
                 icon = Icons.Default.Pets,
                 onGrant = { showUsageDisclosure = true },
@@ -320,7 +317,7 @@ internal fun SettingsScreen(
             )
             PermissionCard(
                 title = "Conversations",
-                description = "Shows active message conversations locally and uses reply actions supplied by their apps.",
+                description = "Shows active message and email conversations locally and uses reply actions supplied by their apps.",
                 granted = notificationAccessGranted,
                 icon = Icons.Default.Forum,
                 onGrant = { showNotificationDisclosure = true },
@@ -388,20 +385,13 @@ internal fun SettingsScreen(
             HorizontalDivider(color = Sage)
             SectionLabel("FILE SEARCH")
             Text(
-                "Choose specific document folders or grant full system access. Only filenames are indexed, and everything remains on this device.",
+                "Choose the document folders MinkLauncher Open may search. Only filenames are indexed, and everything remains on this device.",
                 color = Muted,
                 fontSize = 13.sp,
             )
             OutlinedButton(onClick = { folderPicker.launch(null) }, modifier = Modifier.fillMaxWidth()) {
                 Icon(Icons.Default.CreateNewFolder, null)
                 Text("Add search folder", Modifier.padding(start = 8.dp))
-            }
-            OutlinedButton(onClick = { openAllFilesAccessSettings(context) }, modifier = Modifier.fillMaxWidth()) {
-                Icon(if (allFilesGranted) Icons.Default.VerifiedUser else Icons.Default.FolderShared, null)
-                Text(
-                    if (allFilesGranted) "Full system access enabled" else "Enable full system access",
-                    Modifier.padding(start = 8.dp),
-                )
             }
             if (store.searchFolders.isEmpty()) {
                 Text("No document folders selected.", color = Muted, fontSize = 12.sp)
@@ -558,10 +548,6 @@ internal fun SettingsScreen(
             onChooseFolder = {
                 showFileScopeChoice = false
                 folderPicker.launch(null)
-            },
-            onFullAccess = {
-                showFileScopeChoice = false
-                openAllFilesAccessSettings(context)
             },
             onSkip = { showFileScopeChoice = false },
         )
@@ -880,8 +866,8 @@ internal fun NotificationAccessDisclosureDialog(onContinue: () -> Unit, onDismis
         title = { Text("Enable Conversations?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Android notification access lets MinkLauncher Open read active message notifications, group messages into conversations, and offer inline reply when the originating app provides a reply action.")
-                Text("Non-message notifications are ignored. Conversation contents and replies are kept in memory only. They are not stored by MinkLauncher Open, uploaded, or sent to Katoa Apps.")
+                Text("Android notification access lets MinkLauncher Open read active message and email notifications, group them into conversations, and offer inline reply when the originating app provides a reply action.")
+                Text("Notifications outside messages and email are ignored. Conversation contents and replies are kept in memory only. They are not stored by MinkLauncher Open, uploaded, or sent to Katoa Apps.")
                 Text("Replies are handed directly to the app that created the notification. You can revoke access at any time in Android settings.")
             }
         },

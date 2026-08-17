@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
@@ -580,7 +579,6 @@ internal fun MagicBox(
         mutableStateOf(ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED)
     }
     var hasMediaAccess by remember { mutableStateOf(hasMediaReadAccess(context)) }
-    var hasAllFiles by remember { mutableStateOf(hasAllFilesAccess(context)) }
     var showFileScopeChoice by remember { mutableStateOf(false) }
     var showAiPicker by remember { mutableStateOf(false) }
     var showAllAiApps by remember { mutableStateOf(false) }
@@ -611,7 +609,6 @@ internal fun MagicBox(
             if (event == Lifecycle.Event.ON_RESUME) {
                 hasContacts = ContextCompat.checkSelfPermission(context, Manifest.permission.READ_CONTACTS) == PackageManager.PERMISSION_GRANTED
                 hasMediaAccess = hasMediaReadAccess(context)
-                hasAllFiles = hasAllFilesAccess(context)
             }
         }
         lifecycle?.addObserver(observer)
@@ -741,7 +738,7 @@ internal fun MagicBox(
     }
     val plainQuery = text.text.trim().takeIf { prefix !in listOf('@', '#', '-', '$', '+', '?') }.orEmpty()
     val indexedFolderUris = store.searchFolders.map { it.uri }
-    LaunchedEffect(plainQuery, indexedFolderUris, hasMediaAccess, hasAllFiles) {
+    LaunchedEffect(plainQuery, indexedFolderUris, hasMediaAccess) {
         if (plainQuery.length < 2) {
             fileResults = emptyList()
             fileSearchLoading = false
@@ -749,7 +746,7 @@ internal fun MagicBox(
             fileSearchLoading = true
             delay(180)
             fileResults = withContext(Dispatchers.IO) {
-                fileSearchRepository.search(plainQuery, store.searchFolders.toList(), hasMediaAccess, hasAllFiles)
+                fileSearchRepository.search(plainQuery, store.searchFolders.toList(), hasMediaAccess)
             }
             fileSearchLoading = false
         }
@@ -929,7 +926,7 @@ internal fun MagicBox(
                                 Text("Search media filenames", Modifier.padding(start = 8.dp))
                             }
                         }
-                        if (plainQuery.isNotBlank() && store.searchFolders.isEmpty() && !hasAllFiles) {
+                        if (plainQuery.isNotBlank() && store.searchFolders.isEmpty()) {
                             Surface(
                                 onClick = { showFileScopeChoice = true },
                                 shape = RoundedCornerShape(14.dp),
@@ -939,7 +936,7 @@ internal fun MagicBox(
                                     Icon(Icons.Default.FolderOff, null, tint = Color(0xFFD6A300))
                                     Column(Modifier.weight(1f).padding(start = 10.dp)) {
                                         Text("Document search isn’t set up", fontWeight = FontWeight.SemiBold)
-                                        Text("Choose folders or grant full system access.", color = Muted, fontSize = 12.sp)
+                                        Text("Choose a folder for local document search.", color = Muted, fontSize = 12.sp)
                                     }
                                     Icon(Icons.Default.ChevronRight, null)
                                 }
@@ -1130,10 +1127,6 @@ internal fun MagicBox(
             onChooseFolder = {
                 showFileScopeChoice = false
                 folderPicker.launch(null)
-            },
-            onFullAccess = {
-                showFileScopeChoice = false
-                openAllFilesAccessSettings(context)
             },
             onSkip = { showFileScopeChoice = false },
         )

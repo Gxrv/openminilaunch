@@ -22,22 +22,27 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Flag
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Security
-import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
@@ -71,6 +76,7 @@ import androidx.compose.ui.res.imageResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -101,7 +107,7 @@ internal fun MinkDayScreen(store: LauncherStore, isActive: Boolean, goHome: () -
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("MINK’S DAY", letterSpacing = 1.6.sp, fontSize = 12.sp, fontWeight = FontWeight.Black, color = Rust)
-                    Text("A gentler look at today", fontSize = 22.sp, fontWeight = FontWeight.Black)
+                    Text("Your tracked apps today", fontSize = 22.sp, fontWeight = FontWeight.Black)
                 }
                 IconButton(onClick = goHome) { Icon(Icons.AutoMirrored.Filled.ArrowForward, "Go Home") }
             }
@@ -131,13 +137,13 @@ internal fun MinkDayScreen(store: LauncherStore, isActive: Boolean, goHome: () -
         } else {
             item {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    MinkMetric("SCREEN", formatDuration(summary.screenMillis), Icons.Default.PhoneAndroid, Modifier.weight(1f))
                     MinkMetric("SOCIAL", formatDuration(summary.socialMillis), Icons.Default.Schedule, Modifier.weight(1f))
-                    MinkMetric("SWITCHES", summary.switchesToday.toString(), Icons.Default.SwapHoriz, Modifier.weight(1f))
+                    MinkMetric("GOAL", socialGoalLabel(store.socialGoalMinutes), Icons.Default.Flag, Modifier.weight(1f))
+                    MinkMetric("OPENS", summary.socialOpensToday.toString(), Icons.Default.TouchApp, Modifier.weight(1f))
                 }
             }
             if (summary.topApps.isNotEmpty()) {
-                item { SectionLabel("TODAY’S TRAIL") }
+                item { SectionLabel("TRACKED APP TRAIL") }
                 items(summary.topApps, key = { it.packageName }) { app ->
                     Row(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp))
@@ -148,7 +154,7 @@ internal fun MinkDayScreen(store: LauncherStore, isActive: Boolean, goHome: () -
                         AppIcon(app.packageName, actions = null, size = 38.dp)
                         Column(Modifier.weight(1f).padding(start = 11.dp)) {
                             Text(app.label, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text(if (app.social) "Social" else "Other", color = Muted, fontSize = 12.sp)
+                            Text("Tracked", color = Muted, fontSize = 12.sp)
                         }
                         Text(formatDuration(app.foregroundMillis), fontWeight = FontWeight.Bold)
                     }
@@ -181,7 +187,7 @@ internal fun MinkDayScreen(store: LauncherStore, isActive: Boolean, goHome: () -
                     Row(Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Apps, null, tint = Rust)
                         Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
-                            Text("Apps counted as social", fontWeight = FontWeight.SemiBold)
+                            Text("Apps you want to limit", fontWeight = FontWeight.SemiBold)
                             Text(
                                 if (store.socialPackages.isEmpty()) "Automatic Android categories" else "${store.socialPackages.size} selected",
                                 color = Muted,
@@ -333,8 +339,8 @@ private fun UsageAccessCard(onEnable: () -> Unit) {
             Icon(Icons.Default.Security, null, tint = Rust)
             Text("Optional Usage Access", Modifier.padding(start = 10.dp), fontWeight = FontWeight.Bold)
         }
-        Text("Android can let MinkLauncher Open read app activity and screen-time events. Mink uses them to show today’s patterns, then calculates everything locally.", color = Muted, fontSize = 13.sp)
-        Text("No activity history, app list, or insight is uploaded to Katoa Apps.", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+        Text("Android can let MinkLauncher Open measure foreground activity for the social apps you track. Other apps are excluded from your trail and totals.", color = Muted, fontSize = 13.sp)
+        Text("No activity history, tracked-app list, or insight is uploaded to Katoa Apps.", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
         Button(onClick = onEnable, modifier = Modifier.fillMaxWidth()) { Text("Open Usage Access") }
     }
 }
@@ -389,6 +395,7 @@ internal fun SocialAppsDialog(store: LauncherStore, repository: UsageInsightsRep
     val automaticPackages by produceState<Set<String>>(initialValue = emptySet(), apps) {
         value = withContext(Dispatchers.IO) { repository.automaticSocialPackages(apps.orEmpty()) }
     }
+    val selectedPackages = effectiveTrackedPackages(store.socialPackages.toSet(), automaticPackages)
     LaunchedEffect(apps) {
         apps?.takeIf { it.isNotEmpty() }
             ?.let { store.reconcileSocialApps(it.map(LaunchableApp::packageName).toSet()) }
@@ -396,14 +403,14 @@ internal fun SocialAppsDialog(store: LauncherStore, repository: UsageInsightsRep
     AlertDialog(
         onDismissRequest = onDismiss,
         icon = { Icon(Icons.Default.Apps, null, tint = Rust) },
-        title = { Text("Apps counted as social") },
+        title = { Text("Choose tracked apps") },
         text = {
             Column {
                 Text(
                     if (store.socialPackages.isEmpty()) {
-                        "Automatic mode currently recognizes ${automaticPackages.size} installed app${if (automaticPackages.size == 1) "" else "s"} as social. Select apps to replace Android’s categories."
+                        "Automatic mode currently recognizes ${automaticPackages.size} installed app${if (automaticPackages.size == 1) "" else "s"} as social. Select the apps you want to limit to replace Android’s categories."
                     } else {
-                        "${store.socialPackages.size} selected. This manual list replaces Android’s automatic app categories."
+                        "${store.socialPackages.size} selected. Only these apps appear in your trail and totals."
                     },
                     color = Muted,
                     fontSize = 13.sp,
@@ -415,6 +422,50 @@ internal fun SocialAppsDialog(store: LauncherStore, repository: UsageInsightsRep
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
                 )
+                if (selectedPackages.isNotEmpty()) {
+                    Text(
+                        "TRACKED · TAP TO REMOVE",
+                        color = Muted,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                    LazyRow(
+                        Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        items(apps.orEmpty().filter { it.packageName in selectedPackages }, key = { it.packageName }) { app ->
+                            Column(
+                                Modifier.width(70.dp).clip(RoundedCornerShape(12.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                    .clickable {
+                                        store.replaceSocialApps(selectedPackages - app.packageName)
+                                    }.padding(horizontal = 4.dp, vertical = 7.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Box {
+                                    AppIcon(app.packageName, actions = null, size = 31.dp)
+                                    Surface(
+                                        modifier = Modifier.align(Alignment.TopEnd).offset(x = 5.dp, y = (-5).dp),
+                                        shape = CircleShape,
+                                        color = MaterialTheme.colorScheme.error,
+                                    ) {
+                                        Icon(Icons.Default.Close, "Remove ${app.label}", Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onError)
+                                    }
+                                }
+                                Text(
+                                    app.label,
+                                    fontSize = 9.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                                )
+                            }
+                        }
+                    }
+                }
                 when {
                     apps == null -> Box(Modifier.fillMaxWidth().height(180.dp), contentAlignment = Alignment.Center) {
                         androidx.compose.material3.CircularProgressIndicator()
@@ -424,19 +475,30 @@ internal fun SocialAppsDialog(store: LauncherStore, repository: UsageInsightsRep
                     }
                     else -> LazyColumn(Modifier.heightIn(min = 140.dp, max = 330.dp)) {
                         items(visible, key = { it.packageName }) { app ->
-                            val selected = app.packageName in store.socialPackages
+                            val selected = app.packageName in selectedPackages
                         Row(
-                            Modifier.fillMaxWidth().clickable { store.setSocialAppEnabled(app.packageName, !selected) }.padding(vertical = 7.dp),
+                            Modifier.fillMaxWidth().clickable {
+                                store.replaceSocialApps(
+                                    if (selected) selectedPackages - app.packageName else selectedPackages + app.packageName,
+                                )
+                            }.padding(vertical = 7.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             AppIcon(app.packageName, actions = null, size = 34.dp)
                             Column(Modifier.weight(1f).padding(horizontal = 10.dp)) {
                                 Text(app.label, maxLines = 1)
-                                if (store.socialPackages.isEmpty() && app.packageName in automaticPackages) {
-                                    Text("Android category: Social", color = Rust, fontSize = 10.sp)
+                                if (app.packageName in automaticPackages) {
+                                    Text("Android default: Social", color = Rust, fontSize = 10.sp)
                                 }
                             }
-                            Checkbox(checked = selected, onCheckedChange = { store.setSocialAppEnabled(app.packageName, it) })
+                            Checkbox(
+                                checked = selected,
+                                onCheckedChange = {
+                                    store.replaceSocialApps(
+                                        if (it) selectedPackages + app.packageName else selectedPackages - app.packageName,
+                                    )
+                                },
+                            )
                         }
                     }
                         }
@@ -445,7 +507,7 @@ internal fun SocialAppsDialog(store: LauncherStore, repository: UsageInsightsRep
         },
         confirmButton = { Button(onClick = onDismiss) { Text("Done") } },
         dismissButton = {
-            TextButton(onClick = { store.clearSocialApps(); onDismiss() }) { Text("Use automatic") }
+            TextButton(onClick = store::clearSocialApps) { Text("Restore Android defaults") }
         },
     )
 }

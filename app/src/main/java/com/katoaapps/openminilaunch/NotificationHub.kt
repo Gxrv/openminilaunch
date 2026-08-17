@@ -41,6 +41,11 @@ private data class ExtractedMessage(
     val isOutgoing: Boolean,
 )
 
+internal fun isConversationNotification(category: String?, hasStructuredMessages: Boolean): Boolean =
+    hasStructuredMessages ||
+        category == Notification.CATEGORY_MESSAGE ||
+        category == Notification.CATEGORY_EMAIL
+
 data class HubNotification(
     val key: String,
     val conversationId: String,
@@ -237,7 +242,7 @@ class MinkNotificationListenerService : NotificationListenerService() {
             extractLegacyMessages(extras, Notification.EXTRA_HISTORIC_MESSAGES) +
                 extractLegacyMessages(extras, Notification.EXTRA_MESSAGES)
         }
-        val isConversation = styleMessages.isNotEmpty() || notification.category == Notification.CATEGORY_MESSAGE
+        val isConversation = isConversationNotification(notification.category, styleMessages.isNotEmpty())
         if (!isConversation) return null
         val latestIncoming = styleMessages.lastOrNull { !it.isOutgoing }
         val senderName = latestIncoming?.senderName

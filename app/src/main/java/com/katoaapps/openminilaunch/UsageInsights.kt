@@ -26,25 +26,22 @@ internal data class UsageTimelineEvent(
 internal data class UsageTimelineAnalysis(
     val packageDurations: Map<String, Long>,
     val longestSessions: Map<String, Long>,
-    val screenMillis: Long,
-    val switchesToday: Int,
-    val switchesLastHour: Int,
+    val opensToday: Int,
+    val opensLastHour: Int,
 )
 
 internal data class MinkAppUsage(
     val packageName: String,
     val label: String,
     val foregroundMillis: Long,
-    val social: Boolean,
 )
 
 internal data class MinkDaySummary(
     val accessGranted: Boolean,
     val state: MinkState,
-    val screenMillis: Long = 0,
     val socialMillis: Long = 0,
-    val switchesToday: Int = 0,
-    val switchesLastHour: Int = 0,
+    val socialOpensToday: Int = 0,
+    val socialOpensLastHour: Int = 0,
     val topApps: List<MinkAppUsage> = emptyList(),
     val headline: String,
     val detail: String,
@@ -58,7 +55,7 @@ internal data class MinkDaySummary(
                 accessGranted = false,
                 state = if (hour >= 22 || hour < 5) MinkState.SLEEPING else MinkState.WALKING,
                 headline = if (hour >= 22 || hour < 5) "Mink made it home" else "Mink is checking the trail",
-                detail = "Looking at today’s activity on this device…",
+                detail = "Looking at today’s tracked apps on this device…",
                 isLoading = true,
             )
         }
@@ -69,12 +66,15 @@ internal data class MinkDaySummary(
                 accessGranted = accessGranted,
                 state = if (hour >= 22 || hour < 5) MinkState.SLEEPING else MinkState.WALKING,
                 headline = "Mink lost the trail",
-                detail = "Today’s activity could not be read just now.",
+                detail = "Today’s tracked-app activity could not be read just now.",
                 errorMessage = "MinkLauncher Open couldn’t read Android’s usage data. Try again, or check Usage Access in Settings.",
             )
         }
     }
 }
+
+internal fun effectiveTrackedPackages(selectedPackages: Set<String>, androidSocialPackages: Set<String>): Set<String> =
+    selectedPackages.ifEmpty { androidSocialPackages }
 
 internal fun MinkDaySummary.needsAttention(): Boolean = errorMessage != null || accessGranted && when (state) {
     MinkState.PHONE, MinkState.DISTRACTED, MinkState.RESTING -> true
@@ -85,79 +85,67 @@ internal fun analyzeUsageTimeline(
     dayStart: Long,
     now: Long,
     events: List<UsageTimelineEvent>,
+    trackedPackages: Set<String>,
     ignoredPackages: Set<String>,
-    screenMillisOverride: Long? = null,
 ): UsageTimelineAnalysis {
-    if (now <= dayStart) return UsageTimelineAnalysis(emptyMap(), emptyMap(), 0, 0, 0)
+    if (now <= dayStart) return UsageTimelineAnalysis(emptyMap(), emptyMap(), 0, 0)
     val sorted = events.asSequence().filter { it.timestamp <= now }.sortedBy(UsageTimelineEvent::timestamp).toList()
     val durations = mutableMapOf<String, Long>()
     val longest = mutableMapOf<String, Long>()
-    val activeStarts = mutableMapOf<String, Long>()
-    val foregroundEntries = mutableListOf<Pair<Long, String>>()
-    var screenWasOn = false
-    var lastForegroundBeforeDay: String? = null
+    val trackedOpens = mutableListOf<Long>()
+    var activePackage: String? = null
+    var activeSince: Long? = null
+
+    fun closeActive(at: Long) {
+        val packageName = activePackage
+        val began = activeSince
+        if (packageName != null && began != null) addSession(packageName, began, at, durations, longest)
+        activePackage = null
+        activeSince = null
+    }
+
     sorted.asSequence().filter { it.timestamp < dayStart }.forEach { event ->
         when (event.kind) {
-            UsageEventKind.SCREEN_ON -> screenWasOn = true
-            UsageEventKind.SCREEN_OFF -> screenWasOn = false
+            UsageEventKind.SCREEN_OFF -> closeActive(dayStart)
+            UsageEventKind.SCREEN_ON -> Unit
             UsageEventKind.FOREGROUND -> event.packageName?.takeUnless { it in ignoredPackages }?.let { packageName ->
-                activeStarts[packageName] = dayStart
-                lastForegroundBeforeDay = packageName
+                activePackage = packageName.takeIf { it in trackedPackages }
+                activeSince = activePackage?.let { dayStart }
             }
-            UsageEventKind.BACKGROUND -> event.packageName?.takeUnless { it in ignoredPackages }?.let { packageName ->
-                activeStarts.remove(packageName)
-                if (lastForegroundBeforeDay == packageName) lastForegroundBeforeDay = null
-            }
+            UsageEventKind.BACKGROUND -> if (event.packageName == activePackage) closeActive(dayStart)
         }
     }
-    lastForegroundBeforeDay?.takeIf(activeStarts::containsKey)?.let { foregroundEntries += dayStart to it }
-    var screenOnAt: Long? = if (screenWasOn) dayStart else null
-    var screenMillis = 0L
 
     sorted.asSequence().filter { it.timestamp >= dayStart }.forEach { event ->
         val eventTime = event.timestamp.coerceAtMost(now)
         when (event.kind) {
-            UsageEventKind.SCREEN_ON -> if (screenOnAt == null) screenOnAt = eventTime
-            UsageEventKind.SCREEN_OFF -> {
-                val began = screenOnAt ?: dayStart
-                began?.let { if (eventTime > it) screenMillis += eventTime - it }
-                screenOnAt = null
-            }
+            UsageEventKind.SCREEN_ON -> Unit
+            UsageEventKind.SCREEN_OFF -> closeActive(eventTime)
             UsageEventKind.FOREGROUND -> {
                 val packageName = event.packageName ?: return@forEach
                 if (packageName in ignoredPackages) return@forEach
-                if (packageName !in activeStarts) {
-                    activeStarts[packageName] = eventTime
-                    foregroundEntries += eventTime to packageName
+                if (packageName != activePackage) {
+                    closeActive(eventTime)
+                    if (packageName in trackedPackages) {
+                        activePackage = packageName
+                        activeSince = eventTime
+                        trackedOpens += eventTime
+                    }
                 }
             }
             UsageEventKind.BACKGROUND -> {
                 val packageName = event.packageName ?: return@forEach
-                if (packageName in ignoredPackages) return@forEach
-                val began = activeStarts.remove(packageName) ?: dayStart
-                began?.let { addSession(packageName, it, eventTime, durations, longest) }
+                if (packageName == activePackage) closeActive(eventTime)
             }
         }
     }
-    activeStarts.forEach { (packageName, began) -> addSession(packageName, began, now, durations, longest) }
-    screenOnAt?.let { if (now > it) screenMillis += now - it }
-
-    val compactEntries = foregroundEntries.fold(mutableListOf<Pair<Long, String>>()) { result, entry ->
-        if (result.lastOrNull()?.second != entry.second) result += entry
-        result
-    }
-    val switchesToday = (compactEntries.size - 1).coerceAtLeast(0)
+    closeActive(now)
     val lastHourStart = now - 3_600_000L
-    val switchesLastHour = compactEntries.indices.count { index ->
-        index > 0 && compactEntries[index].first >= lastHourStart && compactEntries[index - 1].second != compactEntries[index].second
-    }
-    val boundedOverride = screenMillisOverride?.coerceIn(0L, now - dayStart)
     return UsageTimelineAnalysis(
         packageDurations = durations,
         longestSessions = longest,
-        screenMillis = boundedOverride?.takeIf { it > 0L } ?: screenMillis.coerceAtMost(now - dayStart),
-        switchesToday = switchesToday,
-        switchesLastHour = switchesLastHour,
+        opensToday = trackedOpens.size,
+        opensLastHour = trackedOpens.count { it >= lastHourStart },
     )
 }
 
@@ -178,20 +166,16 @@ internal fun chooseMinkState(
     hour: Int,
     socialMillis: Long,
     socialGoalMinutes: Int,
-    screenMillis: Long,
-    switchesLastHour: Int,
-    longestNonSocialSession: Long,
+    socialOpensLastHour: Int,
+    longestSocialSession: Long,
 ): MinkState = when {
     hour >= 22 || hour < 5 -> MinkState.SLEEPING
-    socialMillis >= socialGoalMinutes * 60_000L || isSocialDominant(socialMillis, screenMillis) -> MinkState.PHONE
-    switchesLastHour >= 14 -> MinkState.DISTRACTED
-    screenMillis >= 6 * 60 * 60_000L -> MinkState.RESTING
-    longestNonSocialSession >= 45 * 60_000L -> MinkState.PURPOSEFUL
+    socialMillis >= socialGoalMinutes * 60_000L -> MinkState.PHONE
+    socialOpensLastHour >= 8 -> MinkState.DISTRACTED
+    longestSocialSession >= 30 * 60_000L -> MinkState.RESTING
+    socialMillis == 0L -> MinkState.PURPOSEFUL
     else -> MinkState.WALKING
 }
-
-internal fun isSocialDominant(socialMillis: Long, screenMillis: Long): Boolean =
-    socialMillis >= 30 * 60_000L && screenMillis > 0L && socialMillis * 100 / screenMillis >= 50
 
 internal class UsageInsightsRepository(private val context: Context) {
     private val usageStats = context.getSystemService(UsageStatsManager::class.java)
@@ -230,49 +214,45 @@ internal class UsageInsightsRepository(private val context: Context) {
         val dayStart = Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalDate()
             .atStartOfDay(zone).toInstant().toEpochMilli()
         val events = readTimelineEvents(dayStart - EVENT_LOOKBACK_MILLIS, nowMillis)
-        val ignored = events.mapNotNull(UsageTimelineEvent::packageName).filterTo(mutableSetOf(), ::isIgnoredPackage)
+        val observedPackages = events.mapNotNull(UsageTimelineEvent::packageName).toSet()
+        val automaticPackages = observedPackages.filterTo(mutableSetOf()) { isSocial(it, emptySet()) }
+        val trackedPackages = effectiveTrackedPackages(socialPackages, automaticPackages)
+        val ignored = observedPackages.filterTo(mutableSetOf(), ::isIgnoredPackage)
         val analysis = analyzeUsageTimeline(
             dayStart = dayStart,
             now = nowMillis,
             events = events,
+            trackedPackages = trackedPackages,
             ignoredPackages = ignored,
-            screenMillisOverride = queryScreenTime(dayStart, nowMillis),
         )
         val allApps = analysis.packageDurations.map { (packageName, duration) ->
-            MinkAppUsage(packageName, appLabel(packageName), duration, isSocial(packageName, socialPackages))
+            MinkAppUsage(packageName, appLabel(packageName), duration)
         }.sortedByDescending(MinkAppUsage::foregroundMillis)
-        val measuredSocialMillis = allApps.filter(MinkAppUsage::social).sumOf(MinkAppUsage::foregroundMillis)
-        val socialMillis = if (analysis.screenMillis > 0L) measuredSocialMillis.coerceAtMost(analysis.screenMillis) else measuredSocialMillis
-        val longestNonSocial = allApps.asSequence().filterNot(MinkAppUsage::social)
-            .maxByOrNull { analysis.longestSessions[it.packageName] ?: 0L }
-        val longestNonSocialMillis = longestNonSocial?.let { analysis.longestSessions[it.packageName] } ?: 0L
+        val socialMillis = allApps.sumOf(MinkAppUsage::foregroundMillis)
+        val longestSocial = allApps.maxByOrNull { analysis.longestSessions[it.packageName] ?: 0L }
+        val longestSocialMillis = longestSocial?.let { analysis.longestSessions[it.packageName] } ?: 0L
         val state = chooseMinkState(
             hour = hour,
             socialMillis = socialMillis,
             socialGoalMinutes = socialGoalMinutes,
-            screenMillis = analysis.screenMillis,
-            switchesLastHour = analysis.switchesLastHour,
-            longestNonSocialSession = longestNonSocialMillis,
+            socialOpensLastHour = analysis.opensLastHour,
+            longestSocialSession = longestSocialMillis,
         )
-        val topSocial = allApps.firstOrNull(MinkAppUsage::social)
         val (headline, detail) = stateCopy(
             state = state,
             socialMillis = socialMillis,
             socialGoalMinutes = socialGoalMinutes,
-            switchesLastHour = analysis.switchesLastHour,
-            screenMillis = analysis.screenMillis,
-            longestNonSocial = longestNonSocial,
-            longestNonSocialMillis = longestNonSocialMillis,
-            topSocial = topSocial,
-            topApp = allApps.firstOrNull { it.foregroundMillis >= DISPLAY_THRESHOLD_MILLIS },
+            socialOpensLastHour = analysis.opensLastHour,
+            longestSocial = longestSocial,
+            longestSocialMillis = longestSocialMillis,
+            topSocial = allApps.firstOrNull { it.foregroundMillis >= DISPLAY_THRESHOLD_MILLIS },
         )
         return MinkDaySummary(
             accessGranted = true,
             state = state,
-            screenMillis = analysis.screenMillis,
             socialMillis = socialMillis,
-            switchesToday = analysis.switchesToday,
-            switchesLastHour = analysis.switchesLastHour,
+            socialOpensToday = analysis.opensToday,
+            socialOpensLastHour = analysis.opensLastHour,
             topApps = allApps.filter { it.foregroundMillis >= DISPLAY_THRESHOLD_MILLIS }.take(5),
             headline = headline,
             detail = detail,
@@ -313,48 +293,34 @@ internal class UsageInsightsRepository(private val context: Context) {
         return result
     }
 
-    private fun queryScreenTime(begin: Long, end: Long): Long? {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) return null
-        return runCatching {
-            usageStats.queryEventStats(UsageStatsManager.INTERVAL_DAILY, begin, end)
-                .filter { it.eventType == UsageEvents.Event.SCREEN_INTERACTIVE }
-                .sumOf { it.totalTime }
-        }.getOrNull()
-    }
-
     private fun noAccessSummary(hour: Int) = MinkDaySummary(
         accessGranted = false,
         state = if (hour >= 22 || hour < 5) MinkState.SLEEPING else MinkState.WALKING,
         headline = if (hour >= 22 || hour < 5) "Mink made it home" else "Mink is ready for the day",
-        detail = "Enable optional Usage Access to turn today’s device activity into local, private insights.",
+        detail = "Enable optional Usage Access to measure time in the social apps you choose, entirely on this device.",
     )
 
     private fun stateCopy(
         state: MinkState,
         socialMillis: Long,
         socialGoalMinutes: Int,
-        switchesLastHour: Int,
-        screenMillis: Long,
-        longestNonSocial: MinkAppUsage?,
-        longestNonSocialMillis: Long,
+        socialOpensLastHour: Int,
+        longestSocial: MinkAppUsage?,
+        longestSocialMillis: Long,
         topSocial: MinkAppUsage?,
-        topApp: MinkAppUsage?,
     ): Pair<String, String> = when (state) {
         MinkState.SLEEPING -> "Mink made it home" to "Today is tucked away. Tomorrow starts with a clean trail."
         MinkState.PHONE -> "Mink stopped to scroll" to if (topSocial != null) {
-            if (socialMillis >= socialGoalMinutes * 60_000L) {
-                "${topSocial.label} led social time today. You’re ${formatDuration(socialMillis)} into a $socialGoalMinutes-minute goal."
-            } else {
-                val ratio = if (screenMillis > 0L) (socialMillis * 100 / screenMillis).coerceAtMost(100L) else 0L
-                "${topSocial.label} led social time. Social apps make up $ratio% of today’s screen time."
-            }
+            "${topSocial.label} led tracked time today. You’re ${formatDuration(socialMillis)} into a $socialGoalMinutes-minute goal."
         } else "Social time passed today’s $socialGoalMinutes-minute goal."
-        MinkState.DISTRACTED -> "Mink keeps changing trails" to "$switchesLastHour app switches in the last hour may be making it harder to settle in."
-        MinkState.RESTING -> "Mink could use a pause" to "You’ve had ${formatDuration(screenMillis)} of screen time today. A short off-screen break might feel good."
-        MinkState.PURPOSEFUL -> "Mink found a steady trail" to "Your longest uninterrupted stretch was ${formatDuration(longestNonSocialMillis)} in ${longestNonSocial?.label ?: "one app"}."
-        MinkState.WALKING -> "Mink is moving along" to if (topApp == null) {
-            "There isn’t enough activity yet to describe today’s trail."
-        } else "${topApp.label} is your most-used app so far at ${formatDuration(topApp.foregroundMillis)}."
+        MinkState.DISTRACTED -> "Mink keeps checking the trail" to "$socialOpensLastHour tracked-app opens in the last hour may be making it harder to settle in."
+        MinkState.RESTING -> "Mink could use a pause" to if (longestSocial != null) {
+            "Your longest visit was ${formatDuration(longestSocialMillis)} in ${longestSocial.label}."
+        } else "A short break from your tracked apps might feel good."
+        MinkState.PURPOSEFUL -> "Mink found a quiet trail" to "No time in your tracked social apps yet today."
+        MinkState.WALKING -> "Mink is moving along" to if (topSocial == null) {
+            "There isn’t enough tracked activity yet to describe today’s trail."
+        } else "${topSocial.label} leads tracked time so far at ${formatDuration(topSocial.foregroundMillis)}."
     }
 
     private fun isSocial(packageName: String, selected: Set<String>): Boolean {

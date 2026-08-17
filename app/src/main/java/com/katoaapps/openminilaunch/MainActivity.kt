@@ -10,7 +10,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -43,7 +42,7 @@ internal val Rust = Color(0xFFB85C3C)
 internal val MinkForest = Color(0xFF173529)
 internal val MinkForestPanel = Color(0xFF10271F)
 internal val Muted = Color(0xFF6B746D)
-private const val FEATURE_UPDATE_ID = "minks_day_0_11_0"
+private const val FEATURE_UPDATE_ID = "open_1_0"
 private const val REQUEST_CONFIGURE_APP_WIDGET = 0x4D4B
 private const val MINK_DAY_PAGE = 0
 private const val HOME_PAGE = 1
@@ -81,23 +80,6 @@ internal fun supportsDirectCalls(context: android.content.Context): Boolean =
 
 internal fun supportsDirectSms(context: android.content.Context): Boolean =
     context.packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY_MESSAGING)
-
-internal fun hasAllFilesAccess(context: android.content.Context): Boolean =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        Environment.isExternalStorageManager()
-    } else {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) ==
-            PackageManager.PERMISSION_GRANTED
-    }
-
-internal fun openAllFilesAccessSettings(context: android.content.Context) {
-    val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION, Uri.parse("package:${context.packageName}"))
-    } else {
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
-    }
-    context.startActivity(intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
-}
 
 class MainActivity : ComponentActivity() {
     private val homeRoleLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { }

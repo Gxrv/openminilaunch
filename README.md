@@ -2,33 +2,36 @@
 
 A focused, keyboard-first Android home-screen launcher and digital assistant built with Kotlin and Jetpack Compose.
 
-Current version: **0.11.0**. Feature releases show existing users a one-time in-app update notice covering new behavior, privacy impact, and any optional permissions; the onboarding tutorial is updated alongside each release.
+Current version: **Open 1.0** (`1.0.0`). Feature releases show existing users a one-time in-app update notice covering new behavior, privacy impact, and any optional permissions; the onboarding tutorial is updated alongside each release.
 
 ## Included
 
 - Date header and settings access
 - First-run onboarding for the launcher, Magic Box, to-dos, search, and permissions, followed by a dedicated shortcut-app setup step
 - Replayable onboarding from Settings, including permission setup
-- Two-at-a-time, horizontally snapping to-do preview
+- A responsive raised Home panel with a two-thirds to-do area and a one-third icon-only shortcut grid
+- Three-at-a-time, horizontally snapping to-do preview with unfinished tasks first
 - Eight home shortcuts: Note, Event, Weather, To-do, Call, Message, Files, and Drawer
 - Long-press shortcut edit mode with persistent drag reordering and a reset control in Settings
 - An active-only **Conversations** space opened from Home:
-  - Non-message notifications are ignored
-  - Messages are grouped into conversation timelines and ordered newest first
+  - Android-standard message and email notifications are included; other notification categories are ignored
+  - Messages and email updates are grouped into conversation timelines and ordered newest first
   - One-to-one conversations can merge across apps when Android exposes a shared contact identity; ambiguous identities remain separate
-  - Each mini conversation shows its source messaging apps and can open the latest provider's full conversation
+  - Each mini conversation shows its source apps and can open the latest provider's full conversation
   - Inline reply appears only when a provider supplies a compatible Android `RemoteInput` action
   - Successful reply handoff is acknowledged with `Sent`; MinkLauncher Open does not claim delivery or read status
   - Conversation contents and replies remain transient in memory, are not retained as history, and are never sent to Katoa Apps
 - A horizontally adjacent widget page for up to four Android app widgets, including an app-grouped visual picker, system binding/configuration, reordering, and removal
 - A dedicated **Mink’s Day** page to the left of Home:
-  - Six illustrated Mink states reflect the time of day and, when optional Usage Access is enabled, today’s screen time, social share, app switching, and uninterrupted app stretches
-  - A compact Home card opens the page and summarizes today without turning the launcher into a dashboard
+  - Six illustrated Mink states reflect the time of day and, when optional Usage Access is enabled, foreground time and opens only for the social apps the user chooses to track
+  - A compact Mink icon in the Home header opens the page and shows an attention dot only when something is actionable
   - The daily social goal can be set to 30, 60, 90, or 120 minutes
-  - Users can explicitly select which installed apps count as social, or leave the list empty to use Android’s app categories
+  - Android’s Social category is the visible default; selecting custom apps replaces it, and Restore defaults returns to Android’s category
+  - Selected tracked apps stay pinned in a fixed section at the top of the picker for quick review and removal
   - Top-app activity and short, non-judgmental observations are calculated only while the app is open
   - MinkLauncher Open stores the goal and category choices, but does not create a separate usage-history database
-  - Activity is refreshed only while MinkLauncher Open is visible; the app has no Internet permission and cannot upload usage data itself
+  - Activity is refreshed only while MinkLauncher Open is visible; non-tracked apps can end a session but never enter the trail or totals
+  - The app has no Internet permission and cannot upload usage data itself
   - Without Usage Access, the page remains available as a time-of-day companion
 - Weather opens a user-selected app, with Weather.com as the browser fallback
 - Configurable default apps for the six external shortcuts
@@ -63,7 +66,7 @@ Current version: **0.11.0**. Feature releases show existing users a one-time in-
 - Optionally enable the minimal **Double-tap screen lock** accessibility service, then double-tap empty home-screen space to lock like the power button. The service cannot read screen content, subscribe to accessibility events, perform gestures, or collect data.
 - Local persistence via SharedPreferences; no account or network is required
 - Privacy-first file search through Android's MediaStore and user-selected document folders; filenames never leave the device
-- Document search can use user-selected folders or Android's optional All files access, with an in-search setup reminder until one is enabled
+- Document search uses only folders the user explicitly selects through Android's system folder picker, with an in-search setup reminder until one is selected
 - File results are grouped as Photos, Videos, Documents, and Audio, with locally generated thumbnails where Android provides them
 - App results from `?` launch immediately when tapped
 - Contact results distinguish Mobile, Work, Home, and custom phone-number labels

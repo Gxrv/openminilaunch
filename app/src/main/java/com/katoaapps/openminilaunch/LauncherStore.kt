@@ -238,18 +238,15 @@ class LauncherStore(context: Context) {
         prefs.edit().putInt("social_goal_minutes", minutes).apply()
     }
 
-    fun setSocialAppEnabled(packageName: String, enabled: Boolean) {
-        val changed = when {
-            enabled && packageName !in socialPackages -> socialPackages.add(packageName)
-            !enabled -> socialPackages.remove(packageName)
-            else -> false
-        }
-        if (changed) prefs.edit().putStringSet("social_packages", socialPackages.toSet()).apply()
-    }
-
     fun reconcileSocialApps(installedPackages: Set<String>) {
         val changed = socialPackages.removeAll { it !in installedPackages }
         if (changed) prefs.edit().putStringSet("social_packages", socialPackages.toSet()).apply()
+    }
+
+    fun replaceSocialApps(packageNames: Set<String>) {
+        socialPackages.clear()
+        socialPackages.addAll(packageNames.sorted())
+        prefs.edit().putStringSet("social_packages", socialPackages.toSet()).apply()
     }
 
     fun clearSocialApps() {

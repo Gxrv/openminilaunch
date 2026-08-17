@@ -9,7 +9,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
-import android.os.Environment
 import android.net.Uri
 import android.provider.Settings
 import android.widget.Toast
@@ -112,17 +111,18 @@ internal fun FeatureUpdateDialog(
     AlertDialog(
         onDismissRequest = onNotNow,
         icon = { Icon(Icons.Default.Pets, null, tint = Rust) },
-        title = { Text("What’s new in 0.11.0") },
+        title = { Text("What’s new in Open 1.0") },
         text = {
             Column(
                 Modifier.heightIn(max = 560.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Text("Meet Mink’s Day", fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                UpdatePoint(Icons.Default.Pets, "A page to the left of Home", "Mink reflects today’s screen time, social time, app switching, and strongest app stretches through six character states.")
-                UpdatePoint(Icons.Default.Tune, "Your definition of social", "Choose which apps count as social and set a 30, 60, 90, or 120 minute daily goal.")
-                UpdatePoint(Icons.Default.Security, "Optional Usage Access", "Android’s Usage Access is required for activity insights. Analysis stays on your device and MinkLauncher Open does not retain a usage-history database.")
-                UpdatePoint(Icons.Default.VisibilityOff, "Works without access", "Skip permission and Mink still changes gently with the time of day without inspecting app activity.")
+                Text("More focused by design", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                UpdatePoint(Icons.Default.Pets, "Social apps only", "Mink’s Day now measures only the social apps you want to limit. Other apps never enter the trail or totals.")
+                UpdatePoint(Icons.Default.Tune, "Defaults you can see", "Android’s Social category is preselected until you create a custom list. Your current apps stay pinned at the top of the picker.")
+                UpdatePoint(Icons.Default.Email, "Email conversations", "Conversations now includes active email threads when the originating app marks them with Android’s email category.")
+                UpdatePoint(Icons.Default.Folder, "Folders you choose", "Document search now works only inside folders you explicitly select. All files access has been removed.")
+                UpdatePoint(Icons.Default.Security, "Still private", "Usage and conversation analysis stays on your device. No new permission is required for this update.")
                 TextButton(onClick = onReviewTutorial, contentPadding = PaddingValues(0.dp)) {
                     Text("Review the updated tutorial")
                 }
@@ -136,7 +136,6 @@ internal fun FeatureUpdateDialog(
 @Composable
 internal fun FileSearchScopeDialog(
     onChooseFolder: () -> Unit,
-    onFullAccess: () -> Unit,
     onSkip: () -> Unit,
 ) {
     AlertDialog(
@@ -145,7 +144,7 @@ internal fun FileSearchScopeDialog(
         title = { Text("Where should MinkLauncher Open search?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("Choose one option for document search. You can change it later in Settings.")
+                Text("Choose a folder for document search. You can add or remove folders later in Settings.")
                 Surface(
                     onClick = onChooseFolder,
                     shape = RoundedCornerShape(16.dp),
@@ -155,20 +154,7 @@ internal fun FileSearchScopeDialog(
                         UpdatePoint(
                             Icons.Default.Folder,
                             "Choose a folder",
-                            "Recommended. MinkLauncher Open searches only folders you approve through Android.",
-                        )
-                    }
-                }
-                Surface(
-                    onClick = onFullAccess,
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerLow,
-                ) {
-                    Box(Modifier.padding(14.dp)) {
-                        UpdatePoint(
-                            Icons.Default.FolderShared,
-                            "Full system access",
-                            "Search filenames across shared device storage. This is Android’s powerful All files access permission.",
+                            "MinkLauncher Open searches only folders you explicitly approve through Android.",
                         )
                     }
                 }
@@ -203,7 +189,7 @@ internal fun UsageAccessDisclosureDialog(onContinue: () -> Unit, onDismiss: () -
         title = { Text("Let Mink reflect your day?") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Android’s Usage Access lets MinkLauncher Open read which apps were active, for how long, screen-time events, and app switches.")
+                Text("Android’s Usage Access lets MinkLauncher Open measure when your tracked social apps are in the foreground and for how long.")
                 Text("MinkLauncher Open uses this only to calculate today’s Mink state and insights on your device. It does not upload your activity, sell it, or keep a separate usage-history database.")
                 Text("This is optional. Mink’s page still works as a time-of-day companion if you skip it, and you can revoke access whenever you want.")
             }
@@ -287,7 +273,7 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                         }
                         2 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                             Text("Type - followed by your task to send it straight to the home widget.", fontSize = 18.sp)
-                            OnboardingPoint(Icons.Default.Swipe, "Swipe the widget", "Each page shows two items at a time.")
+                            OnboardingPoint(Icons.Default.Swipe, "Swipe the widget", "Each page shows three items at a time.")
                             OnboardingPoint(Icons.Default.TouchApp, "Tap the widget", "Open the full list to check, edit, delete, add, or rearrange items.")
                             OnboardingPoint(Icons.Default.CheckCircle, "Keep the context", "New Magic Box tasks animate into the newest to-do page.")
                         }
@@ -333,15 +319,15 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                             MessageSendModeChooser(store.messageSendMode, store::updateMessageSendMode)
                         }
                         5 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                            Text("Swipe right from Home to visit Mink’s Day: a friendly, private reflection of how your phone fit into the day.", fontSize = 18.sp)
+                            Text("Swipe right from Home to visit Mink’s Day: a private view of time spent in the social apps you want to limit.", fontSize = 18.sp)
                             OnboardingPoint(Icons.Default.Pets, "Six gentle states", "Mink walks, moves steadily, gets distracted, checks a phone, rests, or goes to sleep based on today’s local activity and the time of day.")
-                            OnboardingPoint(Icons.Default.Tune, "Your goal and categories", "Choose which apps count as social and set a daily social-time goal. Android’s categories provide a starting point if you select none.")
-                            OnboardingPoint(Icons.Default.Security, "Calculated on your device", "MinkLauncher Open never sends your app activity, screen time, app categories, or insights to Katoa Apps.")
+                            OnboardingPoint(Icons.Default.Tune, "Your tracked apps and goal", "Use Android’s Social category or choose the apps you want to limit, then set a daily tracked-time goal.")
+                            OnboardingPoint(Icons.Default.Security, "Calculated on your device", "Other apps are excluded from the trail. MinkLauncher Open never sends tracked activity, app choices, or insights to Katoa Apps.")
                             OnboardingPoint(Icons.Default.VisibilityOff, "Completely optional", "Without Usage Access, Mink’s page remains available as a quiet time-of-day companion.")
                         }
                         6 -> Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                             Text("The main page stays focused while optional spaces remain close by.", fontSize = 18.sp)
-                            OnboardingPoint(Icons.Default.Forum, "Conversations", "Tap the chat icon beside Settings to read active message threads. Inline reply appears only when the originating app supplies Android's reply action.")
+                            OnboardingPoint(Icons.Default.Forum, "Conversations", "Tap the chat icon beside Settings to read active message and email threads. Inline reply appears only when the originating app supplies Android's reply action.")
                             OnboardingPoint(Icons.Default.Widgets, "Widget page", "Swipe left from Home to add up to four Android widgets. Swipe right or use Back to return Home.")
                             OnboardingPoint(Icons.Default.Pets, "Mink’s Day", "Swipe right from Home for local daily insights. Swipe left or use Back to return Home.")
                             OnboardingPoint(Icons.Default.DragIndicator, "Arrange your grid", "Long-press any Home shortcut to enter edit mode, then drag shortcuts into your preferred order.")
@@ -364,9 +350,9 @@ internal fun OnboardingDialog(store: LauncherStore, actions: DeviceActions, onFi
                             OnboardingPoint(Icons.Default.Sms, "Direct SMS", "Send SMS access is used only after you choose a contact, write a message, and press the @ action. Always ask adds a separate confirmation; Always send treats that action as approval.")
                             OnboardingPoint(Icons.Default.Lock, "Double-tap lock", "Optional accessibility access performs only Android's Lock screen action after your double-tap. It cannot read screen content or observe what you do.")
                             OnboardingPoint(Icons.Default.PhotoLibrary, "Media", "Optional access searches photo, video, and audio filenames locally.")
-                            OnboardingPoint(Icons.Default.Forum, "Conversation access", "Optional notification access powers Conversations. Non-message notifications are ignored, and you can revoke access whenever you want.")
-                            OnboardingPoint(Icons.Default.Pets, "Mink’s Day usage", "Optional Usage Access reads app activity and screen-time events only to calculate today’s insights on this device.")
-                            Text("For documents, Android will let you choose specific folders or grant the stronger All files access permission.", color = Muted, fontSize = 13.sp)
+                            OnboardingPoint(Icons.Default.Forum, "Conversation access", "Optional notification access powers message and email conversations. Other notification types are ignored, and you can revoke access whenever you want.")
+                            OnboardingPoint(Icons.Default.Pets, "Mink’s Day usage", "Optional Usage Access measures foreground time and opens for your tracked social apps only, entirely on this device.")
+                            Text("For documents, Android lets you choose specific folders. MinkLauncher Open cannot search outside folders you approve.", color = Muted, fontSize = 13.sp)
                             Text("Android will show Contacts and Call prompts next. If Mink Assistant is active and your messaging choice includes direct SMS, Android may grant or request Send SMS access before the optional Conversations and Mink’s Day explanations. Media access appears only when you enable file search.", color = Muted)
                         }
                     }

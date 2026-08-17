@@ -141,7 +141,7 @@ private fun ConversationAccessEmptyState(onEnable: () -> Unit) {
         Icon(Icons.Default.NotificationsOff, null, Modifier.size(54.dp), tint = Rust)
         Text("Conversation access is off", fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 18.dp))
         Text(
-            "MinkLauncher Open uses Android notification access only to show active conversations and send replies through their messaging apps. Contents stay on this device and are never sent to Katoa Apps.",
+            "MinkLauncher Open uses Android notification access only to show active message and email conversations and send replies through the originating apps. Contents stay on this device and are never sent to Katoa Apps.",
             color = Muted,
             modifier = Modifier.padding(vertical = 14.dp),
         )
@@ -158,7 +158,7 @@ private fun NoConversationsEmptyState() {
     ) {
         Icon(Icons.Default.Forum, null, Modifier.size(54.dp), tint = Sage)
         Text("No active conversations", fontSize = 22.sp, fontWeight = FontWeight.Black, modifier = Modifier.padding(top = 18.dp))
-        Text("New message conversations will appear here.", color = Muted)
+        Text("New message and email conversations will appear here.", color = Muted)
     }
 }
 

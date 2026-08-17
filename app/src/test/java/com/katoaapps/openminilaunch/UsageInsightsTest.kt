@@ -2,27 +2,36 @@ package com.katoaapps.openminilaunch
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class UsageInsightsTest {
     @Test
-    fun sessionCrossingMidnightIsClampedAndFirstRealSwitchCounts() {
+    fun androidSocialDefaultsAreSelectedUntilUserCreatesCustomSelection() {
+        val defaults = setOf("social.chat", "social.photos")
+
+        assertEquals(defaults, effectiveTrackedPackages(emptySet(), defaults))
+        assertEquals(setOf("social.custom"), effectiveTrackedPackages(setOf("social.custom"), defaults))
+    }
+
+    @Test
+    fun trackedSessionCrossingMidnightIsClampedToToday() {
         val analysis = analyzeUsageTimeline(
             dayStart = 1_000L,
             now = 5_000L,
             events = listOf(
-                event(500L, "reader", UsageEventKind.FOREGROUND),
-                event(2_000L, "reader", UsageEventKind.BACKGROUND),
-                event(2_100L, "chat", UsageEventKind.FOREGROUND),
-                event(3_100L, "chat", UsageEventKind.BACKGROUND),
+                event(500L, "social.reader", UsageEventKind.FOREGROUND),
+                event(2_000L, "social.reader", UsageEventKind.BACKGROUND),
+                event(2_100L, "social.chat", UsageEventKind.FOREGROUND),
+                event(3_100L, "social.chat", UsageEventKind.BACKGROUND),
             ),
+            trackedPackages = setOf("social.reader", "social.chat"),
             ignoredPackages = emptySet(),
         )
-
-        assertEquals(1_000L, analysis.packageDurations["reader"])
-        assertEquals(1_000L, analysis.packageDurations["chat"])
-        assertEquals(1, analysis.switchesToday)
+        assertEquals(1_000L, analysis.packageDurations["social.reader"])
+        assertEquals(1_000L, analysis.packageDurations["social.chat"])
+        assertEquals(1, analysis.opensToday)
     }
 
     @Test
@@ -31,102 +40,113 @@ class UsageInsightsTest {
             dayStart = 0L,
             now = 10_000L,
             events = listOf(
-                event(1_000L, "docs", UsageEventKind.FOREGROUND),
-                event(3_000L, "docs", UsageEventKind.BACKGROUND),
-                event(5_000L, "docs", UsageEventKind.FOREGROUND),
-                event(8_000L, "docs", UsageEventKind.BACKGROUND),
+                event(1_000L, "social.chat", UsageEventKind.FOREGROUND),
+                event(3_000L, "social.chat", UsageEventKind.BACKGROUND),
+                event(5_000L, "social.chat", UsageEventKind.FOREGROUND),
+                event(8_000L, "social.chat", UsageEventKind.BACKGROUND),
             ),
+            trackedPackages = setOf("social.chat"),
             ignoredPackages = emptySet(),
         )
-
-        assertEquals(5_000L, analysis.packageDurations["docs"])
-        assertEquals(3_000L, analysis.longestSessions["docs"])
+        assertEquals(5_000L, analysis.packageDurations["social.chat"])
+        assertEquals(3_000L, analysis.longestSessions["social.chat"])
+        assertEquals(2, analysis.opensToday)
     }
 
     @Test
-    fun duplicateForegroundEventsDoNotResetOrCreateFakeSwitches() {
+    fun duplicateForegroundEventsDoNotResetOrCreateFakeOpens() {
         val analysis = analyzeUsageTimeline(
             dayStart = 0L,
             now = 5_000L,
             events = listOf(
-                event(1_000L, "maps", UsageEventKind.FOREGROUND),
-                event(1_100L, "maps", UsageEventKind.FOREGROUND),
-                event(4_000L, "maps", UsageEventKind.BACKGROUND),
+                event(1_000L, "social.chat", UsageEventKind.FOREGROUND),
+                event(1_100L, "social.chat", UsageEventKind.FOREGROUND),
+                event(4_000L, "social.chat", UsageEventKind.BACKGROUND),
             ),
+            trackedPackages = setOf("social.chat"),
             ignoredPackages = emptySet(),
         )
-
-        assertEquals(3_000L, analysis.packageDurations["maps"])
-        assertEquals(0, analysis.switchesToday)
+        assertEquals(3_000L, analysis.packageDurations["social.chat"])
+        assertEquals(1, analysis.opensToday)
     }
 
     @Test
-    fun ignoredSystemSurfacesDoNotInflateSwitches() {
+    fun nonTrackedForegroundEndsTrackedSessionAndNeverAppears() {
+        val analysis = analyzeUsageTimeline(
+            dayStart = 0L,
+            now = 20_000L,
+            events = listOf(
+                event(1_000L, "social.chat", UsageEventKind.FOREGROUND),
+                // Android does not always provide the matching PAUSED event.
+                event(4_000L, "maps", UsageEventKind.FOREGROUND),
+            ),
+            trackedPackages = setOf("social.chat"),
+            ignoredPackages = emptySet(),
+        )
+        assertEquals(3_000L, analysis.packageDurations["social.chat"])
+        assertNull(analysis.packageDurations["maps"])
+        assertEquals(1, analysis.opensToday)
+    }
+
+    @Test
+    fun ignoredSystemSurfaceDoesNotInterruptTrackedSession() {
         val analysis = analyzeUsageTimeline(
             dayStart = 0L,
             now = 5_000L,
             events = listOf(
-                event(1_000L, "mail", UsageEventKind.FOREGROUND),
+                event(1_000L, "social.chat", UsageEventKind.FOREGROUND),
                 event(2_000L, "systemui", UsageEventKind.FOREGROUND),
-                event(2_500L, "mail", UsageEventKind.FOREGROUND),
-                event(3_000L, "chat", UsageEventKind.FOREGROUND),
+                event(2_500L, "social.chat", UsageEventKind.FOREGROUND),
+                event(4_000L, "social.chat", UsageEventKind.BACKGROUND),
             ),
+            trackedPackages = setOf("social.chat"),
             ignoredPackages = setOf("systemui"),
         )
-
-        assertEquals(1, analysis.switchesToday)
+        assertEquals(3_000L, analysis.packageDurations["social.chat"])
+        assertEquals(1, analysis.opensToday)
     }
 
     @Test
-    fun screenSessionCrossingMidnightIsCounted() {
+    fun screenOffEndsTrackedSession() {
         val analysis = analyzeUsageTimeline(
-            dayStart = 1_000L,
-            now = 5_000L,
+            dayStart = 0L,
+            now = 10_000L,
             events = listOf(
-                event(500L, null, UsageEventKind.SCREEN_ON),
-                event(2_500L, null, UsageEventKind.SCREEN_OFF),
+                event(1_000L, "social.chat", UsageEventKind.FOREGROUND),
+                event(4_000L, null, UsageEventKind.SCREEN_OFF),
             ),
+            trackedPackages = setOf("social.chat"),
             ignoredPackages = emptySet(),
         )
-
-        assertEquals(1_500L, analysis.screenMillis)
+        assertEquals(3_000L, analysis.packageDurations["social.chat"])
     }
 
     @Test
-    fun screenStatsOverrideIsBoundedToElapsedDay() {
+    fun onlyRecentTrackedOpensCountTowardLastHour() {
+        val hour = 60 * MINUTE
         val analysis = analyzeUsageTimeline(
-            dayStart = 1_000L,
-            now = 5_000L,
-            events = emptyList(),
+            dayStart = 0L,
+            now = 3 * hour,
+            events = listOf(
+                event(30 * MINUTE, "social.chat", UsageEventKind.FOREGROUND),
+                event(31 * MINUTE, "social.chat", UsageEventKind.BACKGROUND),
+                event(150 * MINUTE, "social.chat", UsageEventKind.FOREGROUND),
+                event(151 * MINUTE, "social.chat", UsageEventKind.BACKGROUND),
+            ),
+            trackedPackages = setOf("social.chat"),
             ignoredPackages = emptySet(),
-            screenMillisOverride = 99_000L,
         )
-
-        assertEquals(4_000L, analysis.screenMillis)
+        assertEquals(2, analysis.opensToday)
+        assertEquals(1, analysis.opensLastHour)
     }
 
     @Test
-    fun stateUsesContinuousFocusAndPrioritizesHighScreenTime() {
-        assertEquals(
-            MinkState.PURPOSEFUL,
-            chooseMinkState(14, 0, 60, 2 * HOUR, 2, 50 * MINUTE),
-        )
-        assertEquals(
-            MinkState.RESTING,
-            chooseMinkState(14, 0, 60, 7 * HOUR, 2, 50 * MINUTE),
-        )
-    }
-
-    @Test
-    fun socialShareNeedsMeaningfulUseBeforeChangingState() {
-        assertEquals(
-            MinkState.WALKING,
-            chooseMinkState(14, 5 * MINUTE, 60, 8 * MINUTE, 0, 0),
-        )
-        assertEquals(
-            MinkState.PHONE,
-            chooseMinkState(14, 35 * MINUTE, 60, 60 * MINUTE, 0, 0),
-        )
+    fun stateIsDrivenOnlyByTrackedSocialBehavior() {
+        assertEquals(MinkState.PURPOSEFUL, chooseMinkState(14, 0, 60, 0, 0))
+        assertEquals(MinkState.PHONE, chooseMinkState(14, 60 * MINUTE, 60, 0, 0))
+        assertEquals(MinkState.DISTRACTED, chooseMinkState(14, 5 * MINUTE, 60, 8, 0))
+        assertEquals(MinkState.RESTING, chooseMinkState(14, 20 * MINUTE, 60, 2, 30 * MINUTE))
+        assertEquals(MinkState.WALKING, chooseMinkState(14, 5 * MINUTE, 60, 2, 5 * MINUTE))
     }
 
     @Test
@@ -156,6 +176,5 @@ class UsageInsightsTest {
 
     private companion object {
         const val MINUTE = 60_000L
-        const val HOUR = 60 * MINUTE
     }
 }
